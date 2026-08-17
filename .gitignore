@@ -1,0 +1,6 @@
+# Activations and stage outputs are large and machine-local — never commit.
+*.npz
+data/
+outputs/
+__pycache__/
+.venv/

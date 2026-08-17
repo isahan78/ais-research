@@ -1,0 +1,88 @@
+"""Single source of truth for the Gate 1 smoke pipeline.
+
+Every stage imports CONFIG from here and stamps CONFIG.config_hash() into its
+output so any reported number is traceable to the exact settings that
+produced it.
+"""
+
+from __future__ import annotations
+
+import dataclasses
+import hashlib
+import json
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import List, Tuple
+
+# Token ids verified against Qwen/Qwen3-8B tokenizer (agent-checked 2026-08-16).
+# Both are special:false, so skip_special_tokens=True preserves them in decodes.
+THINK_START_ID = 151667  # <think>
+THINK_END_ID = 151668    # </think>
+
+EXPERIMENT_DIR = Path(__file__).resolve().parent
+
+
+@dataclass(frozen=True)
+class Config:
+    # --- model / data -------------------------------------------------------
+    model_id: str = "Qwen/Qwen3-8B"
+    dataset_id: str = "HuggingFaceH4/MATH-500"
+    dataset_split: str = "test"
+    n_problems: int = 20
+
+    # --- generation (stage 1, vLLM) ----------------------------------------
+    max_model_len: int = 4096          # set explicitly; vLLM startup profiling may refuse otherwise
+    max_new_tokens: int = 3072
+    temperature: float = 0.6           # Qwen3 thinking-mode recommended sampling
+    top_p: float = 0.95
+    gpu_memory_utilization: float = 0.90
+
+    # --- truncation (stage 2) ----------------------------------------------
+    truncation_k_percent: int = 50     # single point for Gate 1; the full grid is deferred
+    min_thinking_tokens: int = 4       # thinking blocks shorter than this are degenerate
+
+    # --- harvest (stage 3, HF prefill-only) ---------------------------------
+    layers: Tuple[int, ...] = (9, 18, 27)  # ~25/50/75% depth of 36; all below the [-1] post-norm trap
+    num_decoder_layers: int = 36
+    hidden_size: int = 4096
+    harvest_batch_size: int = 1        # 20 short prefills; batching buys nothing and risks padding bugs
+
+    # --- probe (stage 4) -----------------------------------------------------
+    seed: int = 0
+    test_fraction: float = 0.35
+    n_bootstrap: int = 1000
+    n_shuffle_seeds: int = 50   # floor seeds are cheap; more gives the p95 real resolution
+    max_split_retries: int = 50        # retry GroupShuffleSplit seeds until both classes land in both splits
+
+    # --- quality gates -------------------------------------------------------
+    max_ungradeable_fraction: float = 0.30  # HALT above this (I/O matrix row 4)
+
+    # --- paths ----------------------------------------------------------------
+    output_dir: str = str(EXPERIMENT_DIR / "outputs")
+    traces_path: str = str(EXPERIMENT_DIR / "outputs" / "traces.jsonl")
+    prefixes_path: str = str(EXPERIMENT_DIR / "outputs" / "prefixes.jsonl")
+    acts_path: str = str(EXPERIMENT_DIR / "outputs" / "acts.npz")
+    results_path: str = str(EXPERIMENT_DIR / "outputs" / "results.json")
+
+    def config_hash(self) -> str:
+        """Deterministic 12-hex-char hash of every field except the paths.
+
+        Paths are machine-specific and excluded so the same experimental
+        settings hash identically on any box.
+        """
+        d = dataclasses.asdict(self)
+        for k in ("output_dir", "traces_path", "prefixes_path", "acts_path", "results_path"):
+            d.pop(k)
+        blob = json.dumps(d, sort_keys=True, default=str).encode("utf-8")
+        return hashlib.sha256(blob).hexdigest()[:12]
+
+
+CONFIG = Config()
+
+
+def lineage(input_file: str | None) -> dict:
+    """Standard lineage stamp every stage writes into its output."""
+    return {
+        "config_hash": CONFIG.config_hash(),
+        "input_file": input_file,
+    }

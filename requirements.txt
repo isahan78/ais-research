@@ -1,0 +1,10 @@
+# Gate 1 smoke pipeline — Linux + CUDA target (24 GB card).
+# vLLM pin drives the torch version; install with:
+#   pip install -r requirements.txt
+vllm==0.27.1
+transformers==4.57.1
+torch==2.9.0
+scikit-learn==1.7.2
+datasets==4.4.1
+numpy<3
+pytest==8.4.2
