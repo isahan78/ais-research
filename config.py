@@ -29,10 +29,11 @@ class Config:
     dataset_id: str = "HuggingFaceH4/MATH-500"
     dataset_split: str = "test"
     n_problems: int = 20
+    levels: Tuple[int, ...] = (4, 5)   # decision A: hard problems only, so the model actually fails
 
     # --- generation (stage 1, vLLM) ----------------------------------------
-    max_model_len: int = 4096          # set explicitly; vLLM startup profiling may refuse otherwise
-    max_new_tokens: int = 3072
+    max_model_len: int = 12288         # set explicitly; vLLM startup profiling may refuse otherwise
+    max_new_tokens: int = 8192         # decision B: a capped budget deletes struggling (incorrect) traces
     temperature: float = 0.6           # Qwen3 thinking-mode recommended sampling
     top_p: float = 0.95
     gpu_memory_utilization: float = 0.90
@@ -50,12 +51,15 @@ class Config:
     # --- probe (stage 4) -----------------------------------------------------
     seed: int = 0
     test_fraction: float = 0.35
+    probe_C: float = 1.0               # logistic regularization; in the hash so a sweep is traceable
     n_bootstrap: int = 1000
-    n_shuffle_seeds: int = 50   # floor seeds are cheap; more gives the p95 real resolution
+    n_shuffle_seeds: int = 500  # floor seeds are cheap; 500 gives the p95 real resolution
     max_split_retries: int = 50        # retry GroupShuffleSplit seeds until both classes land in both splits
 
     # --- quality gates -------------------------------------------------------
     max_ungradeable_fraction: float = 0.30  # HALT above this (I/O matrix row 4)
+    max_incomplete_fraction: float = 0.34   # HALT above this: label-correlated truncation bias (row 6)
+    min_included_rows: int = 12             # HALT below this: refuse to fit a probe on degenerate data
 
     # --- paths ----------------------------------------------------------------
     output_dir: str = str(EXPERIMENT_DIR / "outputs")

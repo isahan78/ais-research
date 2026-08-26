@@ -13,6 +13,7 @@ generate_traces.py  (vLLM)  -> outputs/traces.jsonl
 truncate.py                 -> outputs/prefixes.jsonl
 harvest_activations.py (HF) -> outputs/acts.npz (+ .lineage.jsonl)
 train_probe.py              -> outputs/results.json   <- the go/no-go number
+text_floor.py               -> adds the crude text baseline into results.json
 ```
 
 **Target: Linux + CUDA, one 24 GB card (4090-class).** This does not run on
@@ -50,18 +51,22 @@ One command:
 bash experiment/smoke_test.sh
 ```
 
-It runs the four stages as **separate processes** and prints elapsed time per
-stage plus the final AUC vs floor. Do not run stage 1 and stage 3 concurrently
-or from one process: vLLM and HF each need the 15.26 GiB bf16 weights and
-cannot be co-resident on 24 GB.
+It runs the invariant suite first (stage 0 — no GPU time is spent if it
+fails), then the stages as **separate processes**, tees everything to
+`outputs/smoke_test.log`, and ends with one line comparing probe AUC vs
+shuffled-label floor vs text floor. Do not run stage 1 and stage 3
+concurrently or from one process: vLLM and HF each need the 15.26 GiB bf16
+weights and cannot be co-resident on 24 GB.
 
 To run stages individually (same order, from the project root):
 
 ```bash
+pytest experiment/tests/ -q
 python -m experiment.generate_traces
 python -m experiment.truncate
 python -m experiment.harvest_activations
 python -m experiment.train_probe
+python -m experiment.text_floor
 ```
 
 ## Cost estimate
@@ -70,8 +75,8 @@ python -m experiment.train_probe
 |---|---|
 | Instance | ~$0.35–0.60/hr (4090 on Vast/Runpod, 2026 prices) |
 | Setup + weight download | 15–25 min |
-| Stage 1 (20 traces, ≤3072 new tokens) | 5–15 min |
-| Stages 2–4 | < 5 min combined |
+| Stage 1 (20 traces, ≤8192 new tokens) | 10–30 min |
+| Stages 2–5 | < 10 min combined (500 floor seeds × 3 layers dominates) |
 | **Total Gate 1** | **well under 1 GPU-hour ≈ $1; budget 90 min wall-clock** |
 
 If the smoke test does not finish in 90 min, that is itself a NO-GO signal —
@@ -118,10 +123,29 @@ verify 10 random examples by hand:
 
 ## Interpreting the result
 
-- **GO:** best-layer AUC > that layer's shuffled-label floor p95.
-- **NO-GO:** AUC inside the floor distribution → either infrastructure issue
+The floor is the distribution of the **max-across-layers** AUC under shuffled
+train labels (500 seeds) — we report the best of 3 layers, so the floor must
+apply the same selection or it flatters the probe.
+
+- **GO:** best-layer AUC > the shuffled-label floor's p95.
+- **MARGINAL:** AUC above the floor mean but not its p95. With n_test this
+  small that is genuinely ambiguous — the printed line reports what fraction
+  of floor seeds the probe beats; a human decides (usually: regenerate with
+  more problems before calling it either way).
+- **NO-GO:** AUC at or below the floor mean → either infrastructure issue
   or the effect doesn't reproduce at this scale; both paths are in the project
   spec (`_bmad/memory/agent-tyler/mats-project-spec.md`).
+
+**Text-floor comparison (the real question).** `results.json.text_floor` is a
+logistic regression on just (prefix token count, problem level) — no GPU, no
+internals, same train/test problems as the probe. Beating shuffled noise only
+proves the pipeline works; Gate 1 is interesting to the extent the probe also
+clears this crude text-side predictor. If the probe cannot beat two scalars a
+spectator reads off the page, the "internals know early" story has no legs at
+this scale — which is itself a reportable outcome (the project's question is
+exactly how much of the probe's signal the text already gives away). The
+three serious text baselines (LLM judge, trained text classifier,
+forced-answer) remain deferred work.
 
 ## What is deliberately NOT here (deferred; do not add)
 

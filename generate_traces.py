@@ -16,8 +16,10 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import sys
 import time
+from typing import Optional
 
 try:
     from experiment.config import CONFIG, THINK_END_ID, lineage
@@ -28,13 +30,43 @@ except ImportError:
 
 
 def check_ungradeable_fraction(n_ungradeable: int, n_gradeable_pool: int) -> None:
-    """HALT (I/O matrix row 4) when too many completed traces are ungradeable."""
+    """HALT (I/O matrix row 4) when too many completed traces are ungradeable.
+
+    Called only AFTER traces.jsonl is on disk — the expensive artifact must
+    never be destroyed by its own quality gate.
+    """
     if n_gradeable_pool > 0 and n_ungradeable / n_gradeable_pool > CONFIG.max_ungradeable_fraction:
         raise SystemExit(
             f"HALT: {n_ungradeable}/{n_gradeable_pool} completed traces are ungradeable "
             f"(> {CONFIG.max_ungradeable_fraction:.0%}). The answer parser is likely broken "
-            f"for this data — inspect trace_text in {CONFIG.traces_path} before proceeding."
+            f"for this data — inspect trace_text in {CONFIG.traces_path} before proceeding. "
+            f"traces.jsonl has already been written; no GPU time is lost."
         )
+
+
+def check_incomplete_fraction(n_incomplete: int, n_total: int) -> None:
+    """HALT (I/O matrix row 6) when too many traces hit max_tokens mid-thinking.
+
+    Incomplete traces are not random: they are the long, struggling — i.e.
+    disproportionately incorrect — ones. Excluding many of them is
+    label-correlated survivor bias and would fabricate the probe's job.
+    Called only AFTER traces.jsonl is on disk.
+    """
+    if n_total > 0 and n_incomplete / n_total > CONFIG.max_incomplete_fraction:
+        raise SystemExit(
+            f"HALT: {n_incomplete}/{n_total} traces hit max_tokens mid-thinking "
+            f"(> {CONFIG.max_incomplete_fraction:.0%}). Label-correlated truncation biases "
+            f"the sample — raise max_new_tokens (currently {CONFIG.max_new_tokens}) and "
+            f"max_model_len, then regenerate. traces.jsonl has already been written."
+        )
+
+
+def parse_level(value) -> Optional[int]:
+    """Normalize the MATH-500 `level` field (int, or strings like 'Level 4')."""
+    if isinstance(value, int):
+        return value
+    m = re.search(r"\d+", str(value))
+    return int(m.group()) if m else None
 
 
 def render_prompt(tokenizer, problem: str) -> str:
@@ -56,6 +88,14 @@ def main() -> None:
     t0 = time.time()
 
     ds = load_dataset(CONFIG.dataset_id, split=CONFIG.dataset_split)
+    # Decision A: levels 4-5 only, so the model fails at a usable rate and the
+    # label classes are not hopelessly imbalanced (~18/2 on a random sample).
+    ds = ds.filter(lambda row: parse_level(row["level"]) in CONFIG.levels)
+    if len(ds) < CONFIG.n_problems:
+        raise SystemExit(
+            f"HALT: only {len(ds)} problems at levels {CONFIG.levels} in "
+            f"{CONFIG.dataset_id}:{CONFIG.dataset_split}; need {CONFIG.n_problems}."
+        )
     ds = ds.shuffle(seed=CONFIG.seed).select(range(CONFIG.n_problems))
 
     tokenizer = AutoTokenizer.from_pretrained(CONFIG.model_id)
@@ -117,8 +157,8 @@ def main() -> None:
             "config_hash": CONFIG.config_hash(),
         })
 
-    check_ungradeable_fraction(n_ungradeable, len(records) - n_incomplete)
-
+    # Write FIRST, gate after: the traces are the expensive artifact and must
+    # survive their own quality gates (rebuild task, review loop 1).
     with open(CONFIG.traces_path, "w") as f:
         meta = {
             "record_type": "meta",
@@ -137,6 +177,10 @@ def main() -> None:
     print(f"generate_traces: {len(records)} traces "
           f"({n_correct} correct, {n_incomplete} incomplete, {n_ungradeable} ungradeable) "
           f"-> {CONFIG.traces_path}")
+
+    # Quality gates run AFTER the artifact is safely on disk.
+    check_incomplete_fraction(n_incomplete, len(records))
+    check_ungradeable_fraction(n_ungradeable, len(records) - n_incomplete)
 
 
 if __name__ == "__main__":
