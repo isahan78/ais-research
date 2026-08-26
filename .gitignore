@@ -4,3 +4,8 @@ data/
 outputs/
 __pycache__/
 .venv/
+# calibration evidence is small and worth keeping; bulk outputs are not
+outputs/*.npz
+outputs/*.jsonl
+outputs/*.log
+!outputs/calibration/
