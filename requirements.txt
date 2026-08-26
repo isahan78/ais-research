@@ -1,11 +1,13 @@
 # Gate 1 smoke pipeline — Linux + CUDA target (24 GB card).
-# vLLM pin drives the torch version; install with:
+#
+# vLLM owns the torch/transformers stack: pinning those ourselves produced
+# ResolutionImpossible on 2026-08-26 (transformers==4.57.1 vs vLLM's pin).
+# Pin only vLLM and the pure-Python analysis deps; let vLLM resolve the rest.
 #   pip install -r requirements.txt
 vllm==0.27.1
-transformers==4.57.1
-torch==2.9.0
-accelerate==1.11.0   # required by device_map="cuda" in stage 3 — without it, stage 3 fails AFTER stage 1 has been paid for
+accelerate          # required by device_map="cuda" in stage 3 — without it stage 3 fails AFTER stage 1 has been paid for
 scikit-learn==1.7.2
-datasets==4.4.1
+datasets
 numpy<3
 pytest==8.4.2
+huggingface_hub[cli]
