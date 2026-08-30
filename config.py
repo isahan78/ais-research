@@ -87,7 +87,47 @@ class Config:
         return hashlib.sha256(blob).hexdigest()[:12]
 
 
-CONFIG = Config()
+def _from_env() -> Config:
+    """Build CONFIG, allowing a per-run override of the truncation point and
+    output directory via EXPERIMENT_K / EXPERIMENT_OUTPUT_DIR.
+
+    This is how the truncation grid runs: the stages stay single-k and
+    dataset-agnostic, and a shell loop invokes the whole pipeline once per k
+    into its own output directory. Restructuring four stages to loop
+    internally would have been a larger, riskier change for the same result.
+
+    The override IS part of the config hash (k is a data-affecting setting),
+    so each grid point's artifacts carry a distinct, traceable hash.
+    """
+    import os
+
+    k_raw = os.environ.get("EXPERIMENT_K")
+    out_raw = os.environ.get("EXPERIMENT_OUTPUT_DIR")
+    if k_raw is None and out_raw is None:
+        return Config()
+
+    overrides = {}
+    if k_raw is not None:
+        k = int(k_raw)
+        if not 1 <= k <= 99:
+            raise SystemExit(
+                f"HALT: EXPERIMENT_K={k} outside 1..99. A prefix must end strictly "
+                f"mid-thinking; 0 or 100 would leave nothing to cut or nothing to predict."
+            )
+        overrides["truncation_k_percent"] = k
+    if out_raw is not None:
+        d = Path(out_raw).resolve()
+        overrides.update(
+            output_dir=str(d),
+            traces_path=str(d / "traces.jsonl"),
+            prefixes_path=str(d / "prefixes.jsonl"),
+            acts_path=str(d / "acts.npz"),
+            results_path=str(d / "results.json"),
+        )
+    return dataclasses.replace(Config(), **overrides)
+
+
+CONFIG = _from_env()
 
 
 def lineage(input_file: str | None) -> dict:
