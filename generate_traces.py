@@ -1,5 +1,9 @@
 """Stage 1: generate thinking traces with vLLM and grade them.
 
+Dataset-agnostic: CONFIG.dataset_kind picks a pure adapter in
+dataset_adapters.py that maps a raw HF row to (problem_id, prompt_text,
+gold_answer, meta). Nothing below that mapping knows which benchmark it is.
+
 Writes traces.jsonl. Runs as its own process and exits fully before stage 3
 starts — vLLM and HF cannot be co-resident on a 24 GB card (2 x 15.26 GiB).
 
@@ -16,17 +20,27 @@ from __future__ import annotations
 
 import json
 import os
-import re
 import sys
 import time
-from typing import Optional
 
 try:
     from experiment.config import CONFIG, THINK_END_ID, lineage
+    from experiment.dataset_adapters import get_adapter, parse_level
     from experiment.grading import grade
 except ImportError:
     from config import CONFIG, THINK_END_ID, lineage
+    from dataset_adapters import get_adapter, parse_level
     from grading import grade
+
+__all__ = [
+    "check_incomplete_fraction",
+    "make_record",
+    "check_ungradeable_fraction",
+    "get_adapter",
+    "main",
+    "parse_level",
+    "render_prompt",
+]
 
 
 def check_ungradeable_fraction(n_ungradeable: int, n_gradeable_pool: int) -> None:
@@ -61,22 +75,40 @@ def check_incomplete_fraction(n_incomplete: int, n_total: int) -> None:
         )
 
 
-def parse_level(value) -> Optional[int]:
-    """Normalize the MATH-500 `level` field (int, or strings like 'Level 4')."""
-    if isinstance(value, int):
-        return value
-    m = re.search(r"\d+", str(value))
-    return int(m.group()) if m else None
-
-
-def render_prompt(tokenizer, problem: str) -> str:
+def render_prompt(tokenizer, prompt_text: str) -> str:
     """Render the chat prompt exactly once. Note: `enable_thinking` is
     deliberately NOT passed — thinking mode is on by default for Qwen3, and
     passing enable_thinking=False would pre-fill an empty think block."""
-    messages = [{"role": "user", "content": problem}]
+    messages = [{"role": "user", "content": prompt_text}]
     return tokenizer.apply_chat_template(
         messages, tokenize=False, add_generation_prompt=True
     )
+
+
+def make_record(item, rendered_prompt: str, prompt_token_ids, trace_text: str,
+                trace_token_ids, correct, truncated_incomplete: bool) -> dict:
+    """One traces.jsonl row. Pure, so the schema is testable without a GPU.
+
+    Schema note: `level` and `subject` stay TOP-LEVEL keys even where the
+    dataset has no such field (level is None for MMLU-Pro, subject is its
+    category) — downstream stages (truncate, harvest, train_probe, text_floor)
+    and previously written traces.jsonl files must keep reading the same keys.
+    Dataset-specific extras are ADDED under `meta`, never swapped in.
+    """
+    return {
+        "problem_id": item.problem_id,
+        "level": item.meta.get("level"),
+        "subject": item.meta.get("subject"),
+        "gold_answer": item.gold_answer,
+        "meta": dict(item.meta),
+        "rendered_prompt": rendered_prompt,
+        "prompt_token_ids": prompt_token_ids,
+        "trace_text": trace_text,
+        "trace_token_ids": trace_token_ids,
+        "correct": correct,
+        "truncated_incomplete": truncated_incomplete,
+        "config_hash": CONFIG.config_hash(),
+    }
 
 
 def main() -> None:
@@ -87,20 +119,25 @@ def main() -> None:
     os.makedirs(CONFIG.output_dir, exist_ok=True)
     t0 = time.time()
 
+    adapter = get_adapter(CONFIG.dataset_kind)
     ds = load_dataset(CONFIG.dataset_id, split=CONFIG.dataset_split)
-    # Decision A: levels 4-5 only, so the model fails at a usable rate and the
-    # label classes are not hopelessly imbalanced (~18/2 on a random sample).
-    ds = ds.filter(lambda row: parse_level(row["level"]) in CONFIG.levels)
+    # The level filter is a MATH-500 concept (decision A). The adapter owns it,
+    # so MMLU-Pro — which has no `level` field — is simply unfiltered.
+    ds = ds.filter(lambda row: adapter.keep_row(row, CONFIG.levels))
     if len(ds) < CONFIG.n_problems:
         raise SystemExit(
-            f"HALT: only {len(ds)} problems at levels {CONFIG.levels} in "
+            f"HALT: only {len(ds)} problems survive the {CONFIG.dataset_kind} filter in "
             f"{CONFIG.dataset_id}:{CONFIG.dataset_split}; need {CONFIG.n_problems}."
         )
     ds = ds.shuffle(seed=CONFIG.seed).select(range(CONFIG.n_problems))
 
+    # One pure mapping from raw rows to the schema the rest of the pipeline
+    # knows. Everything below this line is dataset-agnostic.
+    items = [adapter.adapt(row) for row in ds]
+
     tokenizer = AutoTokenizer.from_pretrained(CONFIG.model_id)
 
-    rendered = [render_prompt(tokenizer, row["problem"]) for row in ds]
+    rendered = [render_prompt(tokenizer, item.prompt_text) for item in items]
     prompt_ids = [tokenizer(p, add_special_tokens=False)["input_ids"] for p in rendered]
 
     llm = LLM(
@@ -124,7 +161,7 @@ def main() -> None:
     n_ungradeable = 0
     n_incomplete = 0
     records = []
-    for row, prompt, ids, out in zip(ds, rendered, prompt_ids, outputs):
+    for item, prompt, ids, out in zip(items, rendered, prompt_ids, outputs):
         trace_ids = list(out.outputs[0].token_ids)
         # <think>/<\think> are special:false, so they survive this decode.
         trace_text = tokenizer.decode(trace_ids, skip_special_tokens=True)
@@ -133,29 +170,19 @@ def main() -> None:
         if truncated_incomplete:
             n_incomplete += 1
             correct = None  # no post-thinking answer exists to grade
-            print(f"WARNING: {row['unique_id']}: no </think> (hit max_tokens mid-thinking)",
+            print(f"WARNING: {item.problem_id}: no </think> (hit max_tokens mid-thinking)",
                   file=sys.stderr)
         else:
             end = trace_ids.index(THINK_END_ID)
             response_text = tokenizer.decode(trace_ids[end + 1:], skip_special_tokens=True)
-            correct = grade(response_text, row["answer"])
+            correct = grade(response_text, item.gold_answer)
             if correct is None:
                 n_ungradeable += 1
-                print(f"WARNING: {row['unique_id']}: ungradeable answer", file=sys.stderr)
+                print(f"WARNING: {item.problem_id}: ungradeable answer", file=sys.stderr)
 
-        records.append({
-            "problem_id": row["unique_id"],
-            "level": row["level"],
-            "subject": row["subject"],
-            "gold_answer": row["answer"],
-            "rendered_prompt": prompt,
-            "prompt_token_ids": ids,
-            "trace_text": trace_text,
-            "trace_token_ids": trace_ids,
-            "correct": correct,
-            "truncated_incomplete": truncated_incomplete,
-            "config_hash": CONFIG.config_hash(),
-        })
+        records.append(make_record(
+            item, prompt, ids, trace_text, trace_ids, correct, truncated_incomplete
+        ))
 
     # Write FIRST, gate after: the traces are the expensive artifact and must
     # survive their own quality gates (rebuild task, review loop 1).
@@ -163,6 +190,7 @@ def main() -> None:
         meta = {
             "record_type": "meta",
             "stage": "generate_traces",
+            "dataset_kind": CONFIG.dataset_kind,
             "n_problems": len(records),
             "n_truncated_incomplete": n_incomplete,
             "n_ungradeable": n_ungradeable,

@@ -14,18 +14,31 @@ import pytest
 from experiment import harvest_activations
 from experiment import truncate as truncate_module
 from experiment.config import CONFIG, THINK_END_ID, THINK_START_ID, lineage
+from experiment.dataset_adapters import (
+    ADAPTERS,
+    MMLU_PRO_INSTRUCTION,
+    OPTION_LABELS,
+    Math500Adapter,
+    MmluProAdapter,
+    get_adapter,
+)
 from experiment.generate_traces import (
     check_incomplete_fraction,
     check_ungradeable_fraction,
+    make_record,
     parse_level,
 )
-from experiment.grading import extract_boxed, grade, normalize_answer
+from experiment.grading import as_option_letter, extract_boxed, grade, normalize_answer
 from experiment.harvest_activations import (
     check_activation_vector,
     oom_guard,
     residual_index,
 )
-from experiment.text_floor import build_feature_rows, split_indices_from_results
+from experiment.text_floor import (
+    build_feature_rows,
+    problem_difficulty_scalars,
+    split_indices_from_results,
+)
 from experiment.train_probe import (
     bootstrap_ci,
     check_min_included,
@@ -219,6 +232,43 @@ class TestGrading:
         assert grade(r"answer: \boxed{42}", "42") is True
         assert grade(r"answer: \boxed{41}", "42") is False
 
+    # MMLU-Pro: the label is a single option letter. Measured 0/40 ungradeable
+    # (RESULTS.md Run 004), so this path must not be "fixed" into cleverness.
+    @pytest.mark.parametrize("letter", list(OPTION_LABELS))
+    def test_grade_every_option_letter(self, letter):
+        assert grade(f"final: \\boxed{{{letter}}}", letter) is True
+        wrong = "A" if letter != "A" else "B"
+        assert grade(f"final: \\boxed{{{wrong}}}", letter) is False
+
+    def test_grade_letter_happy_path(self):
+        assert grade("...\\boxed{C}", "C") is True
+        assert grade("...\\boxed{D}", "C") is False
+
+    @pytest.mark.parametrize("boxed", ["C", " C ", "(C)", "c", r"\text{C}", "**C**", "C."])
+    def test_grade_letter_tolerates_decoration(self, boxed):
+        assert grade("so " + r"\boxed{" + boxed + "}", "C") is True
+
+    def test_grade_letter_missing_box_is_ungradeable(self):
+        assert grade("I think the answer is C", "C") is None
+
+    def test_letter_path_does_not_swallow_longer_answers(self):
+        # Only a BARE A-J gold answer takes the multiple-choice path; a boxed
+        # multi-character prediction must still be a plain mismatch, not a match.
+        assert grade(r"\boxed{CD}", "C") is False
+        assert grade(r"\boxed{12}", "C") is False
+
+    def test_math_grading_unchanged_by_letter_path(self):
+        assert grade(r"\boxed{\frac{1}{2}}", r"\dfrac{1}{2}") is True
+        assert grade(r"\boxed{42}", "42") is True
+        assert grade(r"\boxed{41}", "42") is False
+
+    @pytest.mark.parametrize("raw,expected", [
+        ("C", "C"), ("(c)", "C"), ("**J**", "J"), ("A.", "A"),
+        ("CD", None), ("", None), ("K", None), (r"\frac{1}{2}", None),
+    ])
+    def test_as_option_letter_table(self, raw, expected):
+        assert as_option_letter(raw) == expected
+
     @pytest.mark.parametrize("a,b", [
         (r"\dfrac{1}{2}", r"\frac{1}{2}"),
         ("2.0", "2"),
@@ -228,6 +278,212 @@ class TestGrading:
     ])
     def test_normalize_equivalences(self, a, b):
         assert normalize_answer(a) == normalize_answer(b)
+
+
+# --------------------------------------------------------------------------
+# Dataset adapters: the ONLY dataset-specific code. Both datasets must map to
+# the same normalized record, and the record written to traces.jsonl must stay
+# backward-compatible (downstream reads problem_id / prompt_token_ids /
+# trace_token_ids / correct / truncated_incomplete, plus level & subject).
+# --------------------------------------------------------------------------
+
+MATH500_ROW = {
+    "unique_id": "test/algebra/1.json",
+    "problem": "What is $1+1$?",
+    "answer": "2",
+    "level": 5,
+    "subject": "Algebra",
+    "solution": "trivial",
+}
+
+MMLU_PRO_ROW = {
+    "question_id": 70,
+    "question": "A 20-year-old woman presents with fatigue. What is the diagnosis?",
+    "options": ["Anemia", "Diabetes", "Hypothyroidism", "Lupus"],
+    "answer": "C",
+    "answer_index": 2,
+    "category": "health",
+    "src": "ori_mmlu-professional_medicine",
+    "cot_content": "",
+}
+
+
+def _mmlu_row(**overrides):
+    row = dict(MMLU_PRO_ROW)
+    row.update(overrides)
+    return row
+
+
+class TestDatasetAdapters:
+    def test_registry_covers_both_kinds(self):
+        assert set(ADAPTERS) == {"math500", "mmlu_pro"}
+        assert isinstance(get_adapter("math500"), Math500Adapter)
+        assert isinstance(get_adapter("mmlu_pro"), MmluProAdapter)
+
+    def test_unknown_kind_halts(self):
+        with pytest.raises(SystemExit, match="unknown dataset_kind"):
+            get_adapter("gsm8k")
+
+    def test_adapter_module_is_importable_without_heavy_deps(self):
+        # The suite must run with no torch / vllm / datasets / network.
+        import inspect
+
+        from experiment import dataset_adapters
+
+        head = inspect.getsource(dataset_adapters).split("@dataclass", 1)[0]
+        for banned in ("import torch", "import vllm", "from datasets", "import datasets",
+                       "import transformers"):
+            assert banned not in head
+
+    # ---- math500 ---------------------------------------------------------
+    def test_math500_record_fields(self):
+        rec = get_adapter("math500").adapt(MATH500_ROW)
+        assert rec.problem_id == "test/algebra/1.json"
+        assert rec.prompt_text == "What is $1+1$?"
+        assert rec.gold_answer == "2"
+        assert rec.meta["level"] == 5
+        assert rec.meta["subject"] == "Algebra"
+        assert rec.meta["dataset_kind"] == "math500"
+
+    @pytest.mark.parametrize("level,levels,keep", [
+        (5, (4, 5), True), (4, (4, 5), True), (3, (4, 5), False),
+        ("Level 5", (4, 5), True), ("Level 1", (4, 5), False), (3, (), True),
+    ])
+    def test_math500_level_filter(self, level, levels, keep):
+        row = dict(MATH500_ROW, level=level)
+        assert get_adapter("math500").keep_row(row, levels) is keep
+
+    def test_level_filter_does_not_apply_to_mmlu_pro(self):
+        # MMLU-Pro has no `level` field at all; the filter must be a no-op and
+        # must never touch row["level"] (that would be a KeyError on real data).
+        assert "level" not in MMLU_PRO_ROW
+        assert get_adapter("mmlu_pro").keep_row(MMLU_PRO_ROW, (4, 5)) is True
+
+    # ---- mmlu_pro --------------------------------------------------------
+    def test_mmlu_pro_record_fields(self):
+        rec = get_adapter("mmlu_pro").adapt(MMLU_PRO_ROW)
+        assert rec.problem_id == "70"          # str, so group-split keys never change type
+        assert isinstance(rec.problem_id, str)
+        assert rec.gold_answer == "C"
+        assert rec.meta["level"] is None       # no difficulty field exists
+        assert rec.meta["subject"] == "health"  # category kept under the old key
+        assert rec.meta["category"] == "health"
+        assert rec.meta["src"] == "ori_mmlu-professional_medicine"
+        assert rec.meta["n_options"] == 4
+        assert rec.meta["dataset_kind"] == "mmlu_pro"
+
+    def test_mmlu_pro_prompt_contains_question_and_every_option(self):
+        rec = get_adapter("mmlu_pro").adapt(MMLU_PRO_ROW)
+        assert MMLU_PRO_ROW["question"] in rec.prompt_text
+        for i, opt in enumerate(MMLU_PRO_ROW["options"]):
+            assert f"{OPTION_LABELS[i]}. {opt}" in rec.prompt_text
+        # ...and no label beyond the options that exist
+        for extra in OPTION_LABELS[len(MMLU_PRO_ROW["options"]):]:
+            assert f"\n{extra}. " not in rec.prompt_text
+
+    @pytest.mark.parametrize("n_options", [2, 4, 7, 10])
+    def test_mmlu_pro_prompt_letters_scale_to_ten(self, n_options):
+        row = _mmlu_row(options=[f"opt{i}" for i in range(n_options)],
+                        answer=OPTION_LABELS[n_options - 1], answer_index=n_options - 1)
+        rec = get_adapter("mmlu_pro").adapt(row)
+        for letter in OPTION_LABELS[:n_options]:
+            assert f"{letter}. " in rec.prompt_text
+        assert rec.gold_answer == OPTION_LABELS[n_options - 1]
+
+    def test_mmlu_pro_prompt_instructs_single_letter_in_boxed(self):
+        rec = get_adapter("mmlu_pro").adapt(MMLU_PRO_ROW)
+        assert MMLU_PRO_INSTRUCTION in rec.prompt_text
+        assert "\\boxed{}" in rec.prompt_text
+        assert "single letter" in rec.prompt_text
+
+    def test_mmlu_pro_prompt_grades_against_its_own_instruction(self):
+        # End-to-end contract: what the prompt asks for is what grade() accepts.
+        rec = get_adapter("mmlu_pro").adapt(MMLU_PRO_ROW)
+        assert grade("reasoning... \\boxed{C}", rec.gold_answer) is True
+        assert grade("reasoning... \\boxed{A}", rec.gold_answer) is False
+
+    def test_mmlu_pro_options_are_never_reordered_or_dropped(self):
+        # Gold is positional: dropping or filtering an option would silently
+        # re-letter the choices and mislabel the run.
+        row = _mmlu_row(options=["N/A", "real", "also real"], answer="C", answer_index=2)
+        rec = get_adapter("mmlu_pro").adapt(row)
+        assert "A. N/A" in rec.prompt_text
+        assert "C. also real" in rec.prompt_text
+        assert rec.gold_answer == "C"
+
+    def test_mmlu_pro_falls_back_to_answer_index(self):
+        rec = get_adapter("mmlu_pro").adapt(_mmlu_row(answer=""))
+        assert rec.gold_answer == "C"
+
+    def test_mmlu_pro_rejects_answer_disagreeing_with_index(self):
+        with pytest.raises(ValueError, match="disagrees with"):
+            get_adapter("mmlu_pro").adapt(_mmlu_row(answer="A"))
+
+    def test_mmlu_pro_rejects_more_options_than_labels(self):
+        with pytest.raises(ValueError, match="exceeds"):
+            get_adapter("mmlu_pro").adapt(
+                _mmlu_row(options=[f"o{i}" for i in range(11)], answer="A", answer_index=0)
+            )
+
+    def test_mmlu_pro_rejects_empty_options(self):
+        with pytest.raises(ValueError, match="no options"):
+            get_adapter("mmlu_pro").adapt(_mmlu_row(options=[], answer="A", answer_index=0))
+
+
+class TestTraceRecordSchema:
+    """traces.jsonl stays backward-compatible across the dataset swap."""
+
+    REQUIRED = {"problem_id", "level", "subject", "gold_answer", "rendered_prompt",
+                "prompt_token_ids", "trace_text", "trace_token_ids", "correct",
+                "truncated_incomplete", "config_hash"}
+
+    def _record(self, kind, row):
+        item = get_adapter(kind).adapt(row)
+        return make_record(item, "<rendered>", PROMPT, "trace text",
+                           make_trace(20), True, False)
+
+    @pytest.mark.parametrize("kind,row", [
+        ("math500", MATH500_ROW), ("mmlu_pro", MMLU_PRO_ROW),
+    ])
+    def test_every_downstream_key_present(self, kind, row):
+        rec = self._record(kind, row)
+        assert self.REQUIRED <= set(rec)
+        assert rec["meta"]["dataset_kind"] == kind
+        # meta is ADDED, never a replacement for the old top-level keys
+        assert "level" in rec and "subject" in rec
+
+    def test_mmlu_pro_keeps_level_and_subject_keys(self):
+        rec = self._record("mmlu_pro", MMLU_PRO_ROW)
+        assert rec["level"] is None
+        assert rec["subject"] == "health"
+        assert rec["gold_answer"] == "C"
+
+    def test_math500_path_still_produces_the_old_record(self):
+        rec = self._record("math500", MATH500_ROW)
+        assert rec["problem_id"] == "test/algebra/1.json"
+        assert rec["level"] == 5
+        assert rec["subject"] == "Algebra"
+        assert rec["gold_answer"] == "2"
+
+    @pytest.mark.parametrize("kind,row", [
+        ("math500", MATH500_ROW), ("mmlu_pro", MMLU_PRO_ROW),
+    ])
+    def test_record_survives_truncate_unchanged(self, kind, row):
+        # The stage-2 contract: whatever the adapter produced, build_prefix
+        # reads it by the same keys and lands strictly inside the thinking span.
+        rec = self._record(kind, row)
+        res = build_prefix(rec["problem_id"], rec["prompt_token_ids"],
+                           rec["trace_token_ids"], rec["correct"])
+        assert res.included is True
+        assert THINK_END_ID not in res.prefix_token_ids
+
+    @pytest.mark.parametrize("kind,row", [
+        ("math500", MATH500_ROW), ("mmlu_pro", MMLU_PRO_ROW),
+    ])
+    def test_record_is_json_serializable(self, kind, row):
+        import json
+
+        json.loads(json.dumps(self._record(kind, row)))
 
 
 # --------------------------------------------------------------------------
@@ -253,6 +509,35 @@ class TestLineage:
         changed = dataclasses.replace(Config(), truncation_k_percent=25)
         assert changed.config_hash() != CONFIG.config_hash()
 
+    @pytest.mark.parametrize("field,value", [
+        ("dataset_kind", "math500"),
+        ("dataset_id", "HuggingFaceH4/MATH-500"),
+        ("dataset_split", "validation"),
+        ("n_problems", 42),
+        ("max_new_tokens", 8192),
+        ("max_model_len", 12288),
+        ("levels", (5,)),
+    ])
+    def test_config_hash_includes_dataset_fields(self, field, value):
+        # Any setting that changes what data is generated MUST move the hash,
+        # or a MATH-500 run and an MMLU-Pro run would be indistinguishable in
+        # the lineage stamp.
+        import dataclasses
+        from experiment.config import Config
+
+        changed = dataclasses.replace(Config(), **{field: value})
+        assert getattr(changed, field) != getattr(CONFIG, field)
+        assert changed.config_hash() != CONFIG.config_hash()
+
+    def test_config_hash_excludes_only_paths(self):
+        import dataclasses
+        from experiment.config import Config
+
+        hashed = set(dataclasses.asdict(Config())) - {
+            "output_dir", "traces_path", "prefixes_path", "acts_path", "results_path"
+        }
+        assert {"dataset_kind", "dataset_id", "dataset_split", "n_problems"} <= hashed
+
     def test_lineage_stamp_fields(self):
         stamp = lineage("traces.jsonl")
         assert stamp["config_hash"] == CONFIG.config_hash()
@@ -276,6 +561,29 @@ class TestConfig:
     def test_think_token_ids(self):
         assert THINK_START_ID == 151667
         assert THINK_END_ID == 151668
+
+    def test_dataset_defaults_are_the_adopted_mmlu_pro_settings(self):
+        # Adopted 2026-08-26 on a measured base rate (RESULTS.md Run 004).
+        assert CONFIG.dataset_kind == "mmlu_pro"
+        assert CONFIG.dataset_id == "TIGER-Lab/MMLU-Pro"
+        assert CONFIG.dataset_split == "test"
+        assert CONFIG.n_problems == 300
+
+    def test_configured_dataset_id_matches_the_selected_adapter(self):
+        assert CONFIG.dataset_id == get_adapter(CONFIG.dataset_kind).default_dataset_id
+        assert CONFIG.dataset_split == get_adapter(CONFIG.dataset_kind).default_split
+
+    def test_thinking_budget_is_the_validated_16k(self):
+        # Decision B, validated in Run 002: 8k truncated 30% of traces
+        # (label-correlated survivor bias), 16k truncates 8%.
+        assert CONFIG.max_new_tokens == 16384
+        # Prompt headroom must be generous: an MMLU-Pro item with ten long
+        # options can run past 4k tokens, and vLLM would then silently shorten
+        # THAT item's thinking budget — reintroducing exactly the
+        # label-correlated truncation Decision B removed. Headroom is the
+        # cheap insurance, so assert it rather than the literal context size.
+        headroom = CONFIG.max_model_len - CONFIG.max_new_tokens
+        assert headroom >= 8192, f"only {headroom} prompt tokens of headroom"
 
 
 # --------------------------------------------------------------------------
@@ -622,6 +930,37 @@ class TestTextFloor:
     def test_missing_level_raises(self):
         with pytest.raises(RuntimeError, match="no problem level"):
             build_feature_rows(self._rows(), {"a": 4, "c": 4})
+
+    def test_difficulty_scalar_is_level_when_the_dataset_has_one(self, tmp_path):
+        import json
+
+        path = tmp_path / "traces.jsonl"
+        with open(path, "w") as f:
+            f.write(json.dumps({"record_type": "meta", "stage": "generate_traces"}) + "\n")
+            f.write(json.dumps({"problem_id": "a", "level": "Level 5",
+                                "prompt_token_ids": [1, 2, 3]}) + "\n")
+        scalars, name = problem_difficulty_scalars(str(path))
+        assert name == "problem_level"
+        assert scalars == {"a": 5.0}
+
+    def test_difficulty_scalar_falls_back_to_prompt_length_for_mmlu_pro(self, tmp_path):
+        # MMLU-Pro has no level. Dropping the second feature would weaken the
+        # floor the probe must beat — i.e. inflate the headline gap — so the
+        # floor falls back to a GPU-free per-problem proxy instead.
+        import json
+
+        path = tmp_path / "traces.jsonl"
+        with open(path, "w") as f:
+            f.write(json.dumps({"record_type": "meta", "stage": "generate_traces"}) + "\n")
+            f.write(json.dumps({"problem_id": "70", "level": None,
+                                "prompt_token_ids": list(range(12))}) + "\n")
+        scalars, name = problem_difficulty_scalars(str(path))
+        assert name == "prompt_token_count"
+        assert scalars == {"70": 12.0}
+        # and the feature builder accepts it, so stage 5 still runs on MMLU-Pro
+        rows = [{"problem_id": "70", "prefix_token_ids": list(range(9)), "label": True}]
+        _, X, _ = build_feature_rows(rows, scalars)
+        assert X.tolist() == [[9.0, 12.0]]
 
     def test_split_reuses_probe_partition_exactly(self):
         pids = ["a", "b", "c", "d"]

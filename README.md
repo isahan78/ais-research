@@ -1,8 +1,14 @@
 # Gate 1 smoke pipeline
 
-Go/no-go for the MATS probe-audit project: on 20 MATH-500 problems, does a
+Go/no-go for the MATS probe-audit project: on MMLU-Pro questions (dataset
+selectable in `config.py` — `dataset_kind` is `mmlu_pro` or `math500`), does a
 logistic probe on mid-trace Qwen3-8B activations beat a shuffled-label floor
 at k=50% thinking-token truncation?
+
+MMLU-Pro was adopted on a measured base rate (RESULTS.md Run 004: 23% error, 0
+ungradeable, 12,032 items); MATH-500 stays selectable and its level filter
+applies to that path only. The row->record mapping is the only
+dataset-specific code and lives in `dataset_adapters.py` (pure, no torch).
 
 Four stages, plain scripts, JSONL between them, one config
 (`config.py`). Every output is stamped with the config hash and the input
@@ -137,7 +143,8 @@ apply the same selection or it flatters the probe.
   spec (`_bmad/memory/agent-tyler/mats-project-spec.md`).
 
 **Text-floor comparison (the real question).** `results.json.text_floor` is a
-logistic regression on just (prefix token count, problem level) — no GPU, no
+logistic regression on just (prefix token count, a per-problem difficulty
+scalar: MATH-500's level, or prompt length where the dataset has none) — no GPU, no
 internals, same train/test problems as the probe. Beating shuffled noise only
 proves the pipeline works; Gate 1 is interesting to the extent the probe also
 clears this crude text-side predictor. If the probe cannot beat two scalars a

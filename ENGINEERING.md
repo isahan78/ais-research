@@ -35,7 +35,7 @@ Text-baseline stages (LLM judge, text classifier, forced-answer) and Δ(k) analy
 
 **Rebuild queue — blocking, in order:**
 1. **Tests that execute the decision logic** (mutation review proved: un-shuffled floor, off-by-one layer index, inverted GO/NO-GO all pass the current suite): known-answer floor test (noise→~0.5, separable→high), `residual_index()`/verdict extracted to pure functions and table-tested, stage round-trip tests over synthetic JSONL (schema contract).
-2. **Config changes per decisions A/B/C:** levels 4–5 filter, n_problems≈60, max_new_tokens≥8192 + max_model_len 12288, crude text baseline (prefix length + level) in Gate 1 output.
+2. **Config changes per decisions A/B/C:** levels 4–5 filter (math500 path only — superseded for the science by the 2026-08-26 MMLU-Pro swap), n_problems≈60, max_new_tokens≥8192 + max_model_len 12288, crude text baseline (prefix length + difficulty scalar) in Gate 1 output. **Current config:** `dataset_kind=mmlu_pro`, n_problems=300, max_new_tokens=16384, max_model_len=20480.
 3. **Robustness:** write traces.jsonl before the ungradeable HALT; incomplete-fraction gate; min-included-rows gate; `accelerate` in requirements; OOM handler wraps `from_pretrained`; finiteness check on activations; floor seeds ≥500; probe C swept or in config hash; pytest as stage 0 of smoke_test.sh + tee to log.
 
 ## 4. Gates & hour budget (16h research + 2h write-up)
@@ -68,7 +68,7 @@ huggingface-cli download Qwen/Qwen3-8B        # start first; ~15 min
 pytest experiment/tests/ -v                    # MUST pass before any GPU spend
 bash experiment/smoke_test.sh
 ```
-No HuggingFace token needed (Qwen3-8B and MATH-500 are ungated).
+No HuggingFace token needed (Qwen3-8B, MMLU-Pro and MATH-500 are all ungated).
 
 **Collect:** `scp` the `outputs/` directory AND the smoke-test log to your Mac before teardown. Console scrollback dies with the pod.
 

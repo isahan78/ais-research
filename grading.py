@@ -1,4 +1,9 @@
-"""Answer extraction and grading for MATH-500 traces.
+"""Answer extraction and grading for generated traces.
+
+Covers both datasets the pipeline supports: MATH-500 (LaTeX expressions) and
+MMLU-Pro (a single option letter A-J). Both are graded from the LAST
+\\boxed{...} in the post-thinking response — measured 0/40 ungradeable on
+MMLU-Pro (RESULTS.md Run 004).
 
 Pure stdlib on purpose: the invariant tests import this on a machine with no
 GPU, no torch, no model weights.
@@ -79,6 +84,23 @@ def extract_depth_ok(s: str) -> bool:
     return depth == 0
 
 
+_LETTER_WRAPPERS = "()[]{}*. \t\n"
+
+
+def as_option_letter(s: str) -> Optional[str]:
+    """Return the multiple-choice letter `s` denotes (A-J), else None.
+
+    Accepts the shapes a model actually emits around the letter — "C", "(C)",
+    "**C**", "c." — but nothing longer, so this can never fire on a LaTeX
+    answer. Used only when the GOLD answer is itself an A-J letter, which is
+    true for MMLU-Pro and false for MATH-500.
+    """
+    t = s.strip().strip(_LETTER_WRAPPERS).strip()
+    if len(t) == 1 and t.upper() in "ABCDEFGHIJ":
+        return t.upper()
+    return None
+
+
 def grade(response_text: str, gold_answer: str) -> Optional[bool]:
     """Grade the post-thinking response against the dataset's `answer` field.
 
@@ -87,4 +109,9 @@ def grade(response_text: str, gold_answer: str) -> Optional[bool]:
     pred = extract_boxed(response_text)
     if pred is None:
         return None
+    # Multiple-choice path: only when the gold answer is a bare A-J letter
+    # (MMLU-Pro). Case and decoration on the prediction must not count as wrong.
+    if gold_answer.strip() in "ABCDEFGHIJ" and len(gold_answer.strip()) == 1:
+        pred_letter = as_option_letter(normalize_answer(pred))
+        return pred_letter == gold_answer.strip()
     return normalize_answer(pred) == normalize_answer(gold_answer)

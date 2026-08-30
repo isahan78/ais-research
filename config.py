@@ -26,14 +26,20 @@ EXPERIMENT_DIR = Path(__file__).resolve().parent
 class Config:
     # --- model / data -------------------------------------------------------
     model_id: str = "Qwen/Qwen3-8B"
-    dataset_id: str = "HuggingFaceH4/MATH-500"
+    # dataset_kind selects the row->record adapter in dataset_adapters.py.
+    # "mmlu_pro" adopted 2026-08-26 on a MEASURED base rate (RESULTS.md Run 004:
+    # 23% error, 0 ungradeable, 12,032 items) after MATH-500 was exhausted
+    # (11% error, only 134 level-5 items => ~15 negatives). "math500" is kept
+    # selectable so Runs 001-003 reproduce.
+    dataset_kind: str = "mmlu_pro"     # "mmlu_pro" | "math500"
+    dataset_id: str = "TIGER-Lab/MMLU-Pro"
     dataset_split: str = "test"
-    n_problems: int = 20
-    levels: Tuple[int, ...] = (4, 5)   # decision A: hard problems only, so the model actually fails
+    n_problems: int = 300
+    levels: Tuple[int, ...] = (4, 5)   # decision A; applies to math500 ONLY (MMLU-Pro has no level)
 
     # --- generation (stage 1, vLLM) ----------------------------------------
-    max_model_len: int = 12288         # set explicitly; vLLM startup profiling may refuse otherwise
-    max_new_tokens: int = 8192         # decision B: a capped budget deletes struggling (incorrect) traces
+    max_model_len: int = 24576   # 16384 thinking + 8192 prompt headroom: MMLU-Pro items with 10 long options can exceed 4k, and vLLM would silently shorten that item's thinking budget — reintroducing the label-correlated truncation decision B removed
+    max_new_tokens: int = 16384        # decision B, validated Run 002: 8k truncated 30% of traces, 16k truncates 8%
     temperature: float = 0.6           # Qwen3 thinking-mode recommended sampling
     top_p: float = 0.95
     gpu_memory_utilization: float = 0.90

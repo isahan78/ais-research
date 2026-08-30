@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Gate 1 in one command: pytest gate + 4 stages + crude text floor on
-# 20 level-4/5 MATH-500 problems at k=50%.
+# Gate 1 in one command: pytest gate + 4 stages + crude text floor at k=50%
+# on whatever dataset config.py selects (dataset_kind: mmlu_pro | math500).
 #
 # Stages run as SEPARATE processes on purpose: vLLM (stage 1) must tear down
 # completely before HF (stage 3) loads — 2 x 15.26 GiB does not fit in 24 GiB.
@@ -56,7 +56,7 @@ tf = r["text_floor"]
 best = r["per_layer"][r["best_layer"]]
 print(f"  shuffled floor (max-across-layers, {fl['n_seeds']} seeds): "
       f"mean={fl['mean']} p95={fl['p95']}")
-print(f"  text floor (prefix tokens + level): AUC={tf['auc']} CI95={tf['auc_ci95']}")
+print(f"  text floor ({' + '.join(tf['features'])}): AUC={tf['auc']} CI95={tf['auc_ci95']}")
 print(f"  verdict: {r['verdict']}")
 print(f"GATE 1 FINAL: probe best {r['best_layer']} AUC={best['auc']} "
       f"vs shuffled floor p95={fl['p95']} vs text floor AUC={tf['auc']}")

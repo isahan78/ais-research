@@ -85,7 +85,7 @@ n≈60 → wide CIs. Verbs scale with evidence: "suggestive evidence that…" / 
 
 ## 10. Known limitations (stated in advance)
 
-One model (Qwen3-8B) · one domain (competition math) · n≈60 problems · linear probes only · k-grid granularity · correctness ≠ alignment (we test the correctness variant of the claim; 2507.12428 tested alignment).
+One model (Qwen3-8B) · one domain (MMLU-Pro multiple-choice knowledge/reasoning; competition math was measured and rejected, see Decision Log 2026-08-26) · n≈300 problems · linear probes only · k-grid granularity · correctness ≠ alignment (we test the correctness variant of the claim; 2507.12428 tested alignment).
 
 ## 11. Audited claims
 
