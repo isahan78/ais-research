@@ -13,3 +13,4 @@ pytest==8.4.2
 huggingface_hub[cli]
 matplotlib          # analysis.py figures; analysis.json + all numbers still work without it
 anthropic           # optional: only the Anthropic judge path. The OpenRouter path is stdlib-only.
+plotly              # interactive exploration HTML (make_figures.py --interactive)

@@ -212,7 +212,7 @@ This is a limitation of the *protocol*, not of our implementation — and the au
 
 ### What survives
 
-- **The commitment measurement, and it needs no gold.** Agreement between the forced answer and the final answer: **72% (k=25) → 88% (k=50) → 94% (k=75) → 97% (k=90)**. This is a pure prefix-and-completion comparison with no answer key, and is the cleanest result in the project.
+- **The commitment measurement, and it needs no gold.** TRUE answer identity between the interrupted answer and the trace's final answer (extracted from `generated_text` vs the post-`</think>` span — NOT `forced_correct ≡ label`, which also counts both-wrong-with-different-answers as agreement and inflated earlier figures to 72→97%): **59.5% (k=10) → 68.5% (k=25) → 86.5% (k=50) → 92.7% (k=75) → 96.5% (k=90)**, all 289 rows. A pure prefix-and-completion comparison with no answer key; the cleanest result in the project.
 - **The k=1 control.** Probe = 0.621, below the shuffled floor's p95 (0.669) ⇒ probe signal at k≥10 is not question difficulty.
 - **The judge as difficulty oracle.** 0.876 at k=1 vs 0.959 at k=25.
 - **Pipeline correctness.** An independent audit verified against the data: truncation exact to the token at all six cuts (no prefix contains `</think>`, kept fraction never exceeds k%), activation/label alignment 1:1 and in order, all 300 traces re-graded with 0 disagreements, `hidden_states[L+1]` confirmed the raw residual, all four baselines correctly oriented, and the paired bootstrap genuinely paired. The code was computing the wrong quantity correctly.
