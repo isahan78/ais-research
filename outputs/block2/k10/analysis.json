@@ -19,13 +19,6 @@
             0.7353
           ]
         },
-        "forced_answer": {
-          "auc": 0.7057,
-          "auc_ci95": [
-            0.6139,
-            0.7917
-          ]
-        },
         "text_classifier": {
           "auc": 0.7735,
           "auc_ci95": [
@@ -36,12 +29,9 @@
       },
       "baselines_present": [
         "crude_floor",
-        "forced_answer",
         "text_classifier"
       ],
-      "baselines_missing": [
-        "llm_judge"
-      ],
+      "baselines_missing": [],
       "s_text": 0.7735,
       "s_text_source": "text_classifier",
       "delta": -0.013,
@@ -55,18 +45,13 @@
   },
   "baselines_configured": [
     "crude_floor",
-    "forced_answer",
-    "llm_judge",
     "text_classifier"
   ],
   "baselines_contributing": [
     "crude_floor",
-    "forced_answer",
     "text_classifier"
   ],
-  "baselines_never_available": [
-    "llm_judge"
-  ],
+  "baselines_never_available": [],
   "n_bootstrap": 1000,
   "seed": 0,
   "lineage": {

@@ -60,7 +60,29 @@ BASELINE_SCHEMA_VERSION = 1
 # been run is simply absent — `analyze` records it as missing rather than
 # failing, so a no-API-key laptop run still produces a (weaker, clearly
 # labelled) Δ curve.
-TEXT_BASELINE_NAMES: Tuple[str, ...] = ("forced_answer", "llm_judge", "text_classifier")
+# Readers admitted to S_text = max over readers. A reader belongs here only if
+# its test-time score is a function of the PREFIX ALONE — the same information
+# the probe sees. Two readers were withdrawn on 2026-08-30 after the red-team;
+# see EXCLUDED_FROM_S_TEXT below and RESULTS.md Run 007.
+TEXT_BASELINE_NAMES: Tuple[str, ...] = ("text_classifier",)
+
+# Reported separately, never pooled into S_text. Each entry: why it is excluded.
+EXCLUDED_FROM_S_TEXT: dict = {
+    "forced_answer": (
+        "Its score is grade(forced_answer, GOLD), so it reads the answer key at "
+        "test time — an affordance the probe does not have and a monitor could "
+        "never have. Whenever the interrupted answer equals the final answer the "
+        "score is identical to the label by construction (65% of rows at k=10, "
+        "97% at k=90); on the remaining rows its AUC is 0.000. Its apparent "
+        "0.71->0.96 rise is the answer-copy rate approaching 1. Retained ONLY as "
+        "the gold-free commitment measurement (agreement with the final answer)."
+    ),
+    "llm_judge": (
+        "A difficulty oracle, not a trace reader: Opus 5 scores 0.876 at k=1 with "
+        "essentially no reasoning to read — 91% of its k=25 score of 0.959. "
+        "MMLU-Pro is public; it is largely solving the item itself."
+    ),
+}
 
 # The crude Gate-1 floor (prefix token count + difficulty scalar) already lives
 # inside results.json rather than its own file. It is a legitimate text-only

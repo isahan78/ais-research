@@ -167,3 +167,64 @@ That last line is the finding. It survives all three controls.
 
 ### Engineering note
 `anthropic` SDK 1.2.0 fails here with an internal `TypeError: process() takes no keyword arguments`, re-raised as a misleading `APIConnectionError`; newer versions were unresolvable. The Anthropic path was rewritten to use stdlib `urllib` (matching the existing OpenRouter path), verified with a live call. One fewer dependency.
+
+---
+
+## Run 007 — RED-TEAM: the headline was wrong. Corrected result.
+**2026-08-30 · two adversarial agents + independent second-route recomputation · no new data collected**
+
+### The fatal flaw: forced-answer was scored against the gold answer
+
+`forced_answer.py:325` computes the score as `grade(forced_answer, GOLD)`, while the label is `grade(final_answer, GOLD)`. So score = 1[a_k = g] and label = 1[a_final = g]: **whenever the interrupted answer equals the final answer, the score IS the label, by construction.**
+
+| k | rows where score ≡ label | AUC (all rows) | AUC where they differ |
+|---:|---:|---:|---:|
+| 10 | 65% | 0.734 | **0.000** |
+| 25 | 72% | 0.769 | **0.000** |
+| 50 | 88% | 0.889 | **0.000** |
+| 75 | 94% | 0.925 | **0.000** |
+| 90 | **97%** | 0.974 | **0.000** |
+
+On rows where it is not simply copying the trace's own final answer, its AUC is **zero**. The reported 0.706 → 0.961 rise is the answer-copy rate approaching 1 — a construction artifact, not a finding. And no deployable monitor could compute it: it requires the gold answer, which is the thing being predicted.
+
+**By this project's own rule this is disqualifying a fortiori.** The LLM judge was excluded from `S_text` for *probably having memorised* a public benchmark; forced-answer is handed the key outright.
+
+**WITHDRAWN as a correctness predictor.** `analysis.py` now admits only readers whose score is a function of the prefix alone (`TEXT_BASELINE_NAMES`), with exclusions and reasons recorded in `EXCLUDED_FROM_S_TEXT` so the artifact is self-describing.
+
+### Corrected Δ(k) — the "widening" was the artifact
+
+| k | S_probe | S_text (tuned TF-IDF) | **Δ** | CI95 | excl. 0 |
+|---:|---:|---:|---:|---|:--:|
+| 1 | 0.621 | 0.732 | **−0.111** | [−0.235, +0.012] | no |
+| 10 | 0.761 | 0.774 | **−0.013** | [−0.151, +0.117] | no |
+| 25 | 0.647 | 0.781 | **−0.135** | [−0.244, −0.036] | **yes** |
+| 50 | 0.681 | 0.777 | **−0.097** | [−0.197, +0.004] | no |
+| 75 | 0.677 | 0.776 | **−0.099** | [−0.233, +0.046] | no |
+| 90 | 0.701 | 0.776 | **−0.075** | [−0.176, +0.031] | no |
+
+Δ is **flat at ≈ −0.10, not widening**. One of six cuts excludes zero. The honest claim is now *"suggestive evidence that a probe does not beat a tuned text classifier in this setting"* — materially weaker than what Run 005 reported.
+
+### Second finding: the k%-truncation protocol leaks the trace's eventual length
+
+`corr(prefix thinking tokens at k=50, FULL trace thinking tokens) = 0.99999999` — **by construction**. Cutting at a fixed fraction hands every reader the trace's eventual length, which a real-time monitor cannot know. Prefix length alone (single feature, log tokens, fitted on train only) scores **0.655 / 0.700 / 0.702 / 0.697 / 0.696 / 0.694** across k — i.e. most of the tuned TF-IDF's ~0.78, and above the probe at four of six cuts. Its AUC is essentially **flat in k**, the signature of a pure length oracle rather than a reader of reasoning.
+
+This is a limitation of the *protocol*, not of our implementation — and the audited literature uses the same k%-of-trace construction. **It is now a headline finding rather than a footnote.**
+
+### What survives
+
+- **The commitment measurement, and it needs no gold.** Agreement between the forced answer and the final answer: **72% (k=25) → 88% (k=50) → 94% (k=75) → 97% (k=90)**. This is a pure prefix-and-completion comparison with no answer key, and is the cleanest result in the project.
+- **The k=1 control.** Probe = 0.621, below the shuffled floor's p95 (0.669) ⇒ probe signal at k≥10 is not question difficulty.
+- **The judge as difficulty oracle.** 0.876 at k=1 vs 0.959 at k=25.
+- **Pipeline correctness.** An independent audit verified against the data: truncation exact to the token at all six cuts (no prefix contains `</think>`, kept fraction never exceeds k%), activation/label alignment 1:1 and in order, all 300 traces re-graded with 0 disagreements, `hidden_states[L+1]` confirmed the raw residual, all four baselines correctly oriented, and the paired bootstrap genuinely paired. The code was computing the wrong quantity correctly.
+- **Second-route replication** of k=50 from raw artifacts with independent code: probe 0.6945 (vs 0.6805), forced-answer 0.8421 (exact), split verified disjoint.
+
+### Further corrections
+- **Probe was under-tuned and test-selected.** `probe_C=1.0` was never swept (CV picks 1e-3/1e-4) and `best_layer` is chosen on the *test* set. Honest train-CV tuning gives ≈0.59/0.70/0.70/0.69/0.73/0.70 — **flat**, so the previously reported "non-monotonicity (0.761→0.647→0.681)" is an artifact of those two choices, not small-n noise as Run 005 claimed.
+- **Judge Δ was subtracting AUCs over different row sets** (102 vs 95); properly paired, k=25 is −0.272 not −0.312.
+- **Split seed 0 leaves only 27 training negatives**; over 10 alternate splits the k=10 probe averages 0.704, so the reported 0.761 is a favourable draw.
+- **"probe on the prompt alone" was imprecise** — the k=1 prefix is prompt + `<think>` + ~1% of thinking (mean 0.97%, ~12 tokens).
+- **"ungradeable 3.7%" was wrong** — ungradeable is 3/300 = 1.0%; 3.7% is total exclusions (8 truncated + 3 ungradeable).
+- `k90/results.json` lost its `text_floor` block to a write-order race; `JUDGE_EFFORT` is recorded in notes but never actually sent.
+
+### Assessment
+The project's instrument caught its own headline baseline cheating, four days before submission, using a control built for a different purpose. The corrected result is weaker and more honest: **a probe on internals does not clearly beat a tuned text classifier, most of the text side is trace length, and the length signal is an artifact of the truncation protocol the literature uses.**
