@@ -9,3 +9,14 @@ outputs/*.npz
 outputs/*.jsonl
 outputs/*.log
 !outputs/calibration/
+
+# Secrets — never commit. This repo is intended to go public on submission day.
+.env
+.env.*
+*.key
+*.pem
+secrets*
+**/id_ed25519*
+**/id_rsa*
+# llm_judge response cache may embed prompt text; keep it local
+.judge_cache/
