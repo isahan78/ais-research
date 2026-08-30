@@ -43,6 +43,11 @@ for K in $K_GRID; do
   cp -f "$GEN_OUT/traces.jsonl" "$KOUT/traces.jsonl"
   step "k=$K truncate"
   EXPERIMENT_K="$K" EXPERIMENT_OUTPUT_DIR="$KOUT" $PY -m experiment.truncate
+  if [ -f "$EXPERIMENT_DIR/forced_answer.py" ]; then
+    step "k=$K forced_answer generate (GPU — must be this session)"
+    EXPERIMENT_K="$K" EXPERIMENT_OUTPUT_DIR="$KOUT" $PY -m experiment.forced_answer generate \
+      || echo "WARNING: forced_answer generate failed at k=$K"
+  fi
   step "k=$K harvest_activations"
   EXPERIMENT_K="$K" EXPERIMENT_OUTPUT_DIR="$KOUT" $PY -m experiment.harvest_activations
   step "k=$K train_probe"
@@ -51,17 +56,25 @@ for K in $K_GRID; do
   EXPERIMENT_K="$K" EXPERIMENT_OUTPUT_DIR="$KOUT" $PY -m experiment.text_floor || echo "WARNING: text_floor failed at k=$K"
 done
 
-# --- forced-answer baseline: MUST be this session (needs the model) ---------
-if [ -f "$EXPERIMENT_DIR/forced_answer.py" ]; then
-  for K in $K_GRID; do
-    step "k=$K forced_answer (on-policy text baseline)"
-    EXPERIMENT_K="$K" EXPERIMENT_OUTPUT_DIR="$BASE_OUT/k$K" \
-      $PY -m experiment.forced_answer || echo "WARNING: forced_answer failed at k=$K"
-  done
-else
-  echo; echo "NOTE: forced_answer.py absent — skipping. It needs the GPU, so a"
-  echo "later session would cost a second pod."
-fi
+# --- CPU-side scoring: safe to redo off-pod, but free to do here ----------
+for K in $K_GRID; do
+  KOUT="$BASE_OUT/k$K"
+  if [ -f "$EXPERIMENT_DIR/forced_answer.py" ]; then
+    step "k=$K forced_answer score"
+    EXPERIMENT_K="$K" EXPERIMENT_OUTPUT_DIR="$KOUT" $PY -m experiment.forced_answer score \
+      || echo "WARNING: forced_answer score failed at k=$K"
+  fi
+  if [ -f "$EXPERIMENT_DIR/text_classifier.py" ]; then
+    step "k=$K text_classifier (tuned TF-IDF)"
+    EXPERIMENT_K="$K" EXPERIMENT_OUTPUT_DIR="$KOUT" $PY -m experiment.text_classifier \
+      || echo "WARNING: text_classifier failed at k=$K"
+  fi
+done
+
+# NOTE: llm_judge.py is deliberately NOT run here. It needs no GPU, costs real
+# API money (~n_test calls per k), and is better run from the laptop after the
+# pod is terminated. analysis.py treats a missing judge as "Delta is an upper
+# bound" and says so in analysis.json.
 
 echo; echo "=== GRID COMPLETE $(date -u +%Y-%m-%dT%H:%M:%SZ) ==="
 echo "Copy $BASE_OUT off the pod BEFORE terminating — scrollback dies with it."
