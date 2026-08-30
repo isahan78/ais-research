@@ -95,15 +95,29 @@ One model (Qwen3-8B) · one domain (MMLU-Pro multiple-choice knowledge/reasoning
 | [Can We Predict Alignment…](https://arxiv.org/abs/2507.12428) | Probe beats text readers by +13 F1 (alignment domain) | Ran text baselines — we test whether the gap survives our strongest readers, in a new domain |
 | [No Answer Needed](https://arxiv.org/abs/2509.10625) | Question-only probes predict coming correctness | Beats black-box baselines; "falters on mathematical reasoning" — our domain |
 
-## 12. Pre-registration — FILL BEFORE BLOCK-2 RUNS, NEVER EDIT AFTER
+## 12. Pre-registration — SEALED 2026-08-29, BEFORE Block 2. NEVER EDIT.
 
-> Rule: entries below are written before the corresponding runs. Git history is the tamper-evidence. Post-hoc analyses are allowed but must be labeled post-hoc in the write-up.
+> Written before any Block-2 data existed. Git history is the tamper-evidence (commit timestamp vs. run timestamps in RESULTS.md). Post-hoc analyses are permitted but must be labelled post-hoc in the write-up.
+> Two independent forecasts were recorded — the owner's and Tyler's — without either seeing the other's first. Where they disagree is where this experiment carries the most information.
 
-- [ ] Predicted S_probe at k=50 (best layer): ___
-- [ ] Predicted S_text at k=50 (best reader): ___
-- [ ] Predicted Δ at k=50: ___ ; predicted sign of Δ at k=10: ___
-- [ ] Performative cut — which camp do we bet on, and how large: ___
-- [ ] Predicted model failure rate on level-4/5 problems: ___
+**AUC scale:** 0.5 = chance · 0.7 = decent · 0.9 = strong.
+
+| Quantity | Owner (Isahan) | Tyler | Agree? |
+|---|---|---|---|
+| S_probe at k=50 (best layer) | **0.70** | **0.72** | ✅ close |
+| S_text at k=50 (best reader) | **0.60** | **0.70** | ❌ **disagree** |
+| **Δ at k=50** | **+0.10** | **+0.02** | ❌ **the crux** |
+| Δ at k=10 | ≈ 0 (tied) | small positive, ~+0.03 | ~agree |
+| Performative cut (text confidently wrong) | ~70% confident Camp Internals is right | Camp Internals directionally right (Δ ≈ +0.08 there) but **n too small to resolve** | partial |
+| MMLU-Pro failure rate (n=300) | **40%** | **23%** (±5) — matching Run 004's measurement | ❌ disagree |
+
+**The crux, stated plainly.** Both of us expect the probe to land near 0.70. We disagree about the *text*. Owner bets the text reader is materially weaker (0.60), leaving a real gap. Tyler bets that by the halfway point of a multiple-choice trace the model has usually already written something like "so it's probably C", that a tuned TF-IDF classifier and a frontier judge will both read that, and that the on-policy forced-answer baseline will be strongest of all — leaving almost no gap.
+
+**So: Owner leans Camp Internals. Tyler leans Camp Text.** Δ ≈ +0.10 vs Δ ≈ +0.02 is the bet, and the experiment settles it.
+
+**Falsification, pre-committed:** if Δ at k=50 has a bootstrap CI overlapping 0, the honest headline is *"the probe's apparent early-prediction advantage does not survive strong text baselines in this setting"* — regardless of which of us wanted otherwise. If Δ is clearly positive, Tyler was wrong and the write-up says so.
+
+**Also pre-committed:** the text baseline is scored as the **max** over all available readers (forced-answer, frontier judge, tuned TF-IDF, crude floor). We do not get to pick the weakest one after seeing results.
 
 ## 13. Decision Log (append-only)
 
