@@ -81,3 +81,56 @@ Artifact: `outputs/calibration/mmlu_pro_8B_probe.log`
 **Process lesson, recorded against Tyler:** model and dataset were each chosen on sound but independent criteria, and the base rate of the predicted variable was never measured. The adversarial review caught the symptom (class imbalance); a plausible fix (harder levels) was applied and *not verified*. New rule: **no dataset is adopted without a measured base rate.** Runs 002–004 are that rule being applied.
 
 **Next:** MMLU-Pro loader in `generate_traces.py` (dataset swap + build prompts from the 10 options; `\boxed{}` grading already works — 0 ungradeable). Then fill the pre-registration in EXPERIMENT.md §12 **before** Block 2 runs.
+
+---
+
+## Run 005 — Block 2: the actual experiment (IN PROGRESS)
+**2026-08-30 05:40 UTC · RTX 4090 (Runpod secure, EU-RO-1) · commit `0677f09` · gen config hash `3f151bfa10e2`**
+Qwen3-8B · **MMLU-Pro** · n=300 · thinking budget 16,384 · truncation grid k ∈ {1, 10, 25, 50, 75, 90}
+
+### Generation (complete)
+| Metric | Value | Pre-registered |
+|---|---|---|
+| Traces | 300 (420 s… actually 76 min) | — |
+| Correct / **incorrect** | 237 / **52** | — |
+| **Error rate on gradeable** | **18.0%** (52/289) | Owner 40% · Tyler 23% → **Tyler closer, both over** |
+| Truncated mid-thinking | 8 (2.7%) | Decision B fully vindicated (was 30% at 8k) |
+| Ungradeable | 11 (3.7%) | — |
+
+**52 negatives** — a real minority class. MATH-500's hard ceiling was ~15. The dataset change was correct.
+
+### k=1 — the near-zero control (prompt alone, one thinking token)
+Added at Tyler's request while the pod was warm; **the control that decides whether the whole curve is meaningful.**
+
+| Layer | AUC |
+|---|---|
+| 9 | 0.608 |
+| 18 | 0.589 |
+| **27** | **0.621** (CI95 0.503–0.741) |
+
+Floor p95 = 0.669 → **MARGINAL** (below the floor's 95th percentile).
+
+**The confound is ruled out.** Reading the question alone does *not* reliably predict correctness (0.621, not clearing noise), while 10% of thinking jumps to 0.761. So the probe reads something about the reasoning, not merely how hard the question looks — the failure mode [No Answer Needed](https://arxiv.org/abs/2509.10625) demonstrates is real for others but not operating here. Measured, not asserted.
+
+### k=10 — first Δ
+| Reader | AUC |
+|---|---|
+| **Tuned TF-IDF text classifier** | **0.7735** ← best text reader |
+| Probe (layer 27) | 0.7605 |
+| Forced-answer (on-policy) | 0.7057 |
+| Crude text floor (prefix len + prompt len) | 0.6177 |
+
+**Δ = −0.013, CI95 [−0.151, +0.117]** (paired bootstrap). n_train=187 / n_test=102.
+
+**The probe does not beat the text.** CI comfortably contains zero ⇒ *no detectable difference*, not "text wins".
+
+**Why the strong baseline mattered, concretely:** against the crude floor alone, Δ would have read **+0.14** — a clean, publishable-looking win. The tuned classifier (48-config grid, StratifiedGroupKFold inside the training split only) is what removed it. This is the project's own thesis demonstrated on its own result before publication.
+
+Δ here is an **upper bound**: the LLM judge has not run, and adding any reader can only raise S_text and lower Δ. Recorded in `analysis.json`.
+
+### Incidents
+- **CUDA OOM at k=1 forced-answer.** Killing the grid by PID left a vLLM child holding 11 GiB; the new loop's engine collided with it. k=1 forced-answer must be re-run. Lesson: verify the GPU is clear before relaunching, not just that the parent died.
+- **Pod CPU fitting was ~55× slower than the laptop** (55 min vs ~1 min per probe). Switched the pod to GPU-only work (truncate → forced-answer → harvest); all probe/floor/classifier/analysis now runs locally. Saved ~4 h of pod time (~$3).
+
+### Status
+k=1 ✅ · k=10 ✅ · k=25/50/75/90 in progress. Pod ~$2.70 so far.
