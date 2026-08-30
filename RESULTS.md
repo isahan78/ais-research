@@ -131,3 +131,39 @@ n_test = 102 · single model, single dataset · **Δ is an upper bound** (LLM ju
 - **CUDA OOM at k=1 forced-answer** — killing the grid by PID left a vLLM child holding 11 GiB. Lesson: verify the GPU is clear before relaunching, not just that the parent died.
 - **Pod CPU fitting ~55× slower than the laptop** (55 min vs ~1 min per probe). Switched the pod to GPU-only; saved ~4 h (~$3).
 - **Tyler launched the k=50 analysis three times concurrently**, racing on the same files. No data lost. Then mis-diagnosed a JSON key error as file corruption and reported it as such — corrected. Third instance this session of acting before verifying state.
+
+---
+
+## Run 006 — LLM-judge baseline, and the confound it exposed
+**2026-08-30 · Claude Opus 5 via stdlib HTTP · k=25 then k=1 control · ~$8 API · 102 rows each, disk-cached**
+
+### Result
+
+| Reader | k=1 *(question only)* | k=25 |
+|---|---:|---:|
+| **LLM judge (Opus 5)** | **0.876** | **0.959** |
+| Tuned TF-IDF | 0.732 | 0.781 |
+| Forced-answer | — | 0.745 |
+| Probe | 0.621 *(below floor)* | 0.647 |
+
+### The judge is a difficulty oracle, not a text reader — and must be reported separately
+
+The k=25 figure of 0.959 looked like a decisive win for the text side. **The k=1 control refutes that reading.** With essentially only the question in front of it — no reasoning to read — Opus 5 still reaches **0.876**, i.e. **91% of its k=25 performance**. The trace contributes ~0.08.
+
+MMLU-Pro is a public benchmark; Opus 5 has very likely seen these items. What the judge is mostly doing is **solving the question itself** and inferring that a weaker model will fail a hard one. That is a different quantity from *"what does this trace tell you"*, which is what Δ is meant to measure.
+
+**Consequence for the analysis:** admitting the judge into `S_text` yields Δ = **−0.312** at k=25 and **−0.255 at k=1** — but a Δ at k=1, where no reasoning exists, is not a statement about reasoning at all. It measures Opus 5's competence against a Qwen3-8B probe. **The judge is therefore reported separately as a difficulty oracle, not pooled into S_text.** Pooling it would overstate the headline by attributing Opus 5's own knowledge to information in the trace.
+
+### Selective dropout — checked, not material
+7 of 102 rows returned unparseable probabilities at k=25, and the drop was skewed (5 negatives, 2 positives — a 20% loss of the minority class vs 2.6% of the majority). Rescoring with dropped rows imputed to chance: **0.9587 → 0.9548**. Immaterial. Reported for completeness.
+
+### What the k=1 control has now caught, across three readers
+- **Probe: 0.621, below the noise floor** ⇒ probe signal at k≥10 is genuinely about the reasoning, not question difficulty.
+- **TF-IDF: 0.732, and ~0.78 flat thereafter** ⇒ substantially a difficulty detector; it barely improves as the trace grows.
+- **Judge: 0.876** ⇒ overwhelmingly a difficulty oracle with outside knowledge.
+- **Forced-answer: rises 0.706 → 0.961 across k** ⇒ **the only reader that genuinely tracks the reasoning**, and the one that beats the probe.
+
+That last line is the finding. It survives all three controls.
+
+### Engineering note
+`anthropic` SDK 1.2.0 fails here with an internal `TypeError: process() takes no keyword arguments`, re-raised as a misleading `APIConnectionError`; newer versions were unresolvable. The Anthropic path was rewritten to use stdlib `urllib` (matching the existing OpenRouter path), verified with a live call. One fewer dependency.

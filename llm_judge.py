@@ -226,44 +226,53 @@ def detect_provider(env: Optional[Dict[str, str]] = None) -> Tuple[Optional[str]
 
 
 def _call_anthropic(user_message: str, model: str) -> str:
-    """Official Anthropic SDK. Imported lazily so the module stays importable
-    (and testable) without the package installed."""
-    try:
-        import anthropic
-    except ImportError:
-        raise SystemExit(
-            "HALT: ANTHROPIC_API_KEY is set but the `anthropic` package is not "
-            "installed. `pip install anthropic`, or set OPENROUTER_API_KEY to use "
-            "the stdlib HTTP path instead."
-        )
+    """Anthropic Messages API over stdlib HTTP.
 
-    client = anthropic.Anthropic(timeout=JUDGE_TIMEOUT_S)
-    # Thinking is adaptive by default on this model family; effort is the lever
-    # that keeps a 1,500-call judging run affordable. Server-side refusal
-    # fallbacks are deliberately NOT enabled: a refusal here simply yields an
-    # unparseable reply, which this pipeline already drops explicitly, and the
-    # extra beta header is one more way for the stage to fail on a fresh box.
-    kwargs = dict(
-        model=model,
-        max_tokens=JUDGE_MAX_TOKENS,
-        system=JUDGE_SYSTEM,
-        messages=[{"role": "user", "content": user_message}],
+    Deliberately NOT the official SDK: anthropic==1.2.0 (the version resolvable
+    here on 2026-08-30) raises an internal `TypeError: process() takes no
+    keyword arguments`, which it re-raises as a misleading APIConnectionError.
+    The same request over urllib succeeds, so the stdlib path is the reliable
+    one and it drops a dependency. The OpenRouter path already works this way.
+
+    Server-side refusal fallbacks are deliberately not enabled: a refusal here
+    yields an unparseable reply, which this pipeline already drops explicitly.
+    """
+    import json as _json
+    import urllib.error
+    import urllib.request
+
+    api_key = os.environ.get("ANTHROPIC_API_KEY")
+    if not api_key:
+        raise SystemExit("HALT: ANTHROPIC_API_KEY is not set.")
+
+    payload = {
+        "model": model,
+        "max_tokens": JUDGE_MAX_TOKENS,
+        "system": JUDGE_SYSTEM,
+        "messages": [{"role": "user", "content": user_message}],
+    }
+    req = urllib.request.Request(
+        "https://api.anthropic.com/v1/messages",
+        data=_json.dumps(payload).encode("utf-8"),
+        headers={
+            "x-api-key": api_key,
+            "anthropic-version": "2023-06-01",
+            "content-type": "application/json",
+        },
+        method="POST",
     )
     try:
-        resp = client.messages.create(output_config={"effort": JUDGE_EFFORT}, **kwargs)
-    except TypeError:
-        # An older installed SDK does not know `output_config`. Losing the
-        # effort dial costs money, not correctness — far better than retrying
-        # a guaranteed failure five times and then producing no baseline.
-        print("WARNING: installed `anthropic` SDK rejects output_config; "
-              "running the judge without an effort setting.", file=sys.stderr)
-        resp = client.messages.create(**kwargs)
-    if getattr(resp, "stop_reason", None) == "refusal":
+        with urllib.request.urlopen(req, timeout=JUDGE_TIMEOUT_S) as r:
+            body = _json.loads(r.read())
+    except urllib.error.HTTPError as e:
+        detail = e.read().decode("utf-8", "replace")[:300]
+        raise RuntimeError(f"Anthropic HTTP {e.code}: {detail}") from e
+
+    if body.get("stop_reason") == "refusal":
         return ""
     return "".join(
-        b.text for b in resp.content if getattr(b, "type", None) == "text"
+        b.get("text", "") for b in body.get("content", []) if b.get("type") == "text"
     )
-
 
 def _call_openrouter(user_message: str, model: str) -> str:
     """OpenRouter is a separate service with its own (OpenAI-shaped) HTTP API
