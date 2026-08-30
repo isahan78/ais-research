@@ -1,7 +1,7 @@
 # The Probe–Text Gap
 
 **What this document is:** the scientific design of record. Every analysis decision defers to this file. Changes go through the Decision Log at the bottom — append, never rewrite.
-**Status:** design frozen 2026-08-25 · pre-registration PENDING (must be filled before Block-2 runs) · no data collected yet.
+**Status:** design frozen 2026-08-25 · pre-registration SEALED 2026-08-29 (`2446d69`) · **Block 2 complete 2026-08-30 — full Δ(k) curve measured. See [RESULTS.md](RESULTS.md) Run 005.**
 **Deliverable:** MATS 12.0 application (Neel Nanda stream), due Sept 4 2026, 11:59pm PT. Budget: 16h research (max 20) + 2h write-up.
 
 ---
@@ -85,7 +85,7 @@ n≈60 → wide CIs. Verbs scale with evidence: "suggestive evidence that…" / 
 
 ## 10. Known limitations (stated in advance)
 
-One model (Qwen3-8B) · one domain (MMLU-Pro multiple-choice knowledge/reasoning; competition math was measured and rejected, see Decision Log 2026-08-26) · n≈300 problems · linear probes only · k-grid granularity · correctness ≠ alignment (we test the correctness variant of the claim; 2507.12428 tested alignment).
+One model (Qwen3-8B) · one domain (MMLU-Pro; competition math measured and rejected, Decision Log 2026-08-26) · n=300, **n_test=102 per cut — all CIs wide** · linear probes only · six-point k grid · correctness ≠ alignment (2507.12428 tested alignment) · **Δ is an upper bound until the LLM judge runs** · probe AUC non-monotonic in k (0.761 → 0.647 → 0.681), most likely small-n noise, not reported as a trend · k=1 forced-answer missing (OOM).
 
 ## 11. Audited claims
 
@@ -123,6 +123,13 @@ One model (Qwen3-8B) · one domain (MMLU-Pro multiple-choice knowledge/reasoning
 
 - **2026-08-16** — Project selected over introspection-self-report candidate (killed by lit check: 4 prior papers) and probe-vs-resampling calibration (higher branching risk). Scored against Nanda's written criteria.
 - **2026-08-23** — Adversarial review (3 agents, mutation-tested): floor/verdict/layer-index untested; class imbalance (~18/2 on random MATH-500); label-correlated truncation at 3072 tokens; Gate 1 had no text baseline. Owner approved: (A) levels 4–5, n≈60; (B) thinking budget ≥8k; (C) crude text baseline into Gate 1.
+- **2026-08-30 — BLOCK 2 COMPLETE. Both pre-registered forecasts wrong, same direction.** Six cuts (k=1,10,25,50,75,90) on 300 MMLU-Pro traces, ~$3.30 GPU, pod terminated and verified.
+  - **Δ(k) negative and widening after k=10**: −0.013 → −0.135 → −0.162 → −0.171 → **−0.260**. Three of six CIs exclude zero, all negative.
+  - **At the pre-registered cut k=50, Δ = −0.162.** Owner predicted +0.10, Tyler +0.02. Both predicted the probe would win; it placed **third**. Shared blind spot was the text side (predicted S_text 0.60/0.70, measured **0.842**).
+  - **The winner has no precedent in the audited papers:** forced-answer rises 0.706 → **0.961**. Asking beats reading internals, at the cost of one short generation.
+  - **k=1 control did its job and complicated the story usefully.** Probe on the prompt alone = 0.621, *below* the noise floor ⇒ probe signal at k≥10 is not question difficulty. But TF-IDF at k=1 = 0.732 and stays ~0.78 throughout ⇒ **the text classifier is substantially a question-difficulty detector**, while forced-answer is the only reader tracking the reasoning. The write-up must separate these.
+  - **Strong baselines were load-bearing:** against the crude floor alone, Δ at k=50 reads +0.07 — a clean-looking win.
+  - Outstanding: LLM-judge pilot (Δ is an upper bound until then), k=1 forced-answer (OOM casualty), red-team pass, Figure 1.
 - **2026-08-29 — Scope held, schedule extended (owner decision).** Tyler recommended cutting the truncation grid to 2 cuts to protect time for the text baselines and write-up. Owner overruled: keep full scope, extend research by 2 days (research-complete Sept 2), compress the write-up into more intensive hours Sept 3–4. Risk stated and accepted: Neel reads the form questions first and filters on them, so compressed writing is the highest-risk cut; the Sept 11 extension remains available as unused slack. MMLU-Pro adapter shipped (`e8bf1d3`), 264 tests, max_model_len raised to 24576 for prompt headroom.
 - **2026-08-26 — FIRST HARDWARE RUN. Dataset changed on measured evidence.** Gate 1 executed on a rented RTX 4090. Pipeline: GO (190 tests passed on the box; all 4 stages ran; train_probe HALTed correctly on a single-class split — the review-added guard working). Science: NO-GO, diagnosed by measurement:
   - Decision B **confirmed**: raising the thinking budget 8k→16k cut truncation 30% → 8%, removing the label-correlated survivor bias.
