@@ -119,6 +119,23 @@ One model (Qwen3-8B) · one domain (MMLU-Pro; competition math measured and reje
 
 **Also pre-committed:** the text baseline is scored as the **max** over all available readers (forced-answer, frontier judge, tuned TF-IDF, crude floor). We do not get to pick the weakest one after seeing results.
 
+## 12b. Pre-registration II — SEALED 2026-08-30, before Runs 008–010. NEVER EDIT.
+
+> Sealed before the absolute-token-truncation experiment exists. Git timestamp vs. the run timestamps in RESULTS.md is the tamper-evidence.
+> **Provenance note, recorded deliberately:** Tyler stated his forecast first and gave his reasoning; the owner then adopted the same forecast rather than producing an independent one. So unlike Pre-registration I, these are **not two independent forecasts** and cannot catch a shared blind spot. Weight accordingly.
+
+**The experiment being predicted (Run 008):** re-cut every trace at a FIXED TOKEN COUNT (64/128/256/512/1024 thinking tokens) instead of a fixed percentage. Within a cut every prefix is then the same length, so prefix length carries zero information and the length leak found in Run 007 (`corr(prefix len, full trace len) = 0.99999999`) is structurally impossible. Population fixed once across cuts (traces with ≥1024 thinking tokens) so exclusion cannot be label-correlated.
+
+**Forecast (Tyler's, adopted by owner):**
+- With length controlled, **S_text (TF-IDF) drops materially** — it loses the length crutch that carried most of its ~0.78.
+- **S_probe is roughly unchanged** — it never depended on length (verified in Run 007: probe holds 0.67–0.74 within length quartiles, |corr(probe score, log length)| ≤ 0.20).
+- Therefore **Δ shrinks toward zero, and may turn slightly POSITIVE at small token budgets.**
+- If Δ goes clearly positive under fixed-length cuts, the corrected story inverts: internals *do* add something once the text side is denied its confound.
+
+**Falsification, pre-committed:** if Δ stays around −0.10 under fixed-length cuts, the length leak was NOT the explanation for the text side's advantage, and Run 007's interpretation is wrong on that point — to be stated plainly in the write-up.
+
+**Also pre-committed:** Run 009 (forced-answer *confidence*, the gold-free replacement) is scored as AUC of the answer-token logprob against the true label. It is admitted to `S_text` only if its score is a function of the prefix alone — no gold, no exceptions. Same rule that withdrew its predecessor.
+
 ## 13. Decision Log (append-only)
 
 - **2026-08-16** — Project selected over introspection-self-report candidate (killed by lit check: 4 prior papers) and probe-vs-resampling calibration (higher branching risk). Scored against Nanda's written criteria.
