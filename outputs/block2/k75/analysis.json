@@ -1,0 +1,61 @@
+{
+  "metric": "roc_auc",
+  "definition": "delta(k) = S_probe(k) - S_text(k); S_text = max over text-only readers",
+  "per_k": {
+    "75": {
+      "k_percent": 75,
+      "s_probe": 0.6769,
+      "s_probe_ci95": [
+        0.5602,
+        0.7848
+      ],
+      "probe_layer": "layer_27",
+      "n_test": 102,
+      "text_baselines": {
+        "crude_floor": {
+          "auc": 0.6125,
+          "auc_ci95": [
+            0.4838,
+            0.7329
+          ]
+        },
+        "text_classifier": {
+          "auc": 0.7756,
+          "auc_ci95": [
+            0.6636,
+            0.8662
+          ]
+        }
+      },
+      "baselines_present": [
+        "crude_floor",
+        "text_classifier"
+      ],
+      "baselines_missing": [],
+      "s_text": 0.7756,
+      "s_text_source": "text_classifier",
+      "delta": -0.0987,
+      "delta_ci95": [
+        -0.2328,
+        0.0458
+      ],
+      "delta_ci_method": "paired_bootstrap",
+      "frac_bootstrap_delta_gt_0": 0.099
+    }
+  },
+  "baselines_configured": [
+    "crude_floor",
+    "text_classifier"
+  ],
+  "baselines_contributing": [
+    "crude_floor",
+    "text_classifier"
+  ],
+  "baselines_never_available": [],
+  "n_bootstrap": 1000,
+  "seed": 0,
+  "lineage": {
+    "config_hash": "3033e8da8bba",
+    "input_file": "/Users/IsahanKhan/ais-research/experiment/outputs/block2/k75/results.json"
+  }
+}

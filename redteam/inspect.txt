@@ -1,0 +1,131 @@
+=== k25: n_test=102  prefix contains an explicit stated-answer pattern: 17 (17%)
+    last stated letter == forced answer: 8/17 (47%)
+    forced-answer AUC on STATED subset (n=17, pos=16): 0.8438  acc=0.706
+    forced-answer AUC on NOT STATED subset (n=85, pos=61): 0.7363  acc=0.694
+=== k75: n_test=102  prefix contains an explicit stated-answer pattern: 78 (76%)
+    last stated letter == forced answer: 42/78 (54%)
+    forced-answer AUC on STATED subset (n=78, pos=59): 0.8524  acc=0.885
+    forced-answer AUC on NOT STATED subset (n=24, pos=18): 0.8333  acc=0.833
+
+
+############ HAND INSPECTION: 15 random test rows, k=25 and k=75 ############
+
+--- pid 4116 [k25] gold=C final=C forced=A forced_correct=False label=True
+    stated-pattern hits in thinking: []
+    ...TAIL OF PREFIX: 're both branched-chain amino acids. Let me check their molecular weights. \n\nWait, I think I need to get the exact molecular weights. Let me try again. \n\nLeucine: The molecular formula is C6H13NO2. Let me calculate that. \n\nCarbon: 6 × 12.01 = 72.06 g/mol \n\nHydrogen: 13 × 1.008 = 13.104 g/mol \n\nNitrogen: 14.01 g/mol \n\nOxygen: 2 × 16.00 = 32.00 g/mol \n\nAdding them up: 72.06 + 13.104 = 85.164 + 14.01 = 99.174 + 32.00 = 1'
+
+--- pid 4116 [k75] gold=C final=C forced=C forced_correct=True label=True
+    stated-pattern hits in thinking: ['C', 'A', 'C', 'A', 'C', 'C']
+    ...TAIL OF PREFIX: 'nce. \n\nAlternatively, perhaps the question uses different values for the molecular weights. For example, if the molecular weight of leucine is 131.17 g/mol and isoleucine is 131.17 g/mol, then the calculation is as above. \n\nAlternatively, maybe the question expects us to calculate the molecular weight based on the sum of the percentages. \n\nWait, another approach: \n\nThe total percentage of leucine and isoleucine is 1.'
+
+--- pid 1664 [k25] gold=C final=G forced=C forced_correct=True label=False
+    stated-pattern hits in thinking: []
+    ...TAIL OF PREFIX: "tion is about the relationship between the formal sources. The ILC's Articles on the Law of Treaties (Article 31) says that the rules of law are determined first by treaties, then by custom, and then by general principles. But that might be in the context of interpreting treaties. \n\nAlternatively, the hierarchy might be that treaties are considered the primary source, and then custom, and then general principles. But"
+
+--- pid 1664 [k75] gold=C final=G forced=C forced_correct=True label=False
+    stated-pattern hits in thinking: ['C', 'C', 'C', 'C', 'G', 'G']
+    ...TAIL OF PREFIX: "there is no treaty, then custom is considered. But this is in the context of interpreting treaties. \n\nSo, the hierarchy between the sources themselves is not strictly defined. Therefore, the correct answer might be C: there is no hierarchy between the formal sources of international law. \n\nBut I'm not sure. \n\nAlternatively, the answer is G: there is a hierarchy, but it varies from case to case. \n\nBut I think that the"
+
+--- pid 5004 [k25] gold=E final=E forced=E forced_correct=True label=True
+    stated-pattern hits in thinking: []
+    ...TAIL OF PREFIX: "iest species in the genus Homo. They're known for using tools, right? So maybe Homo erectus came later. Wait, the question is about differences between the two. Let me go through the options one by one.\n\nOption A says Erectus wasn't bipedal. But I remember that both Homo habilis and erectus were bipedal. Bipedalism is a key feature of the genus Homo. So A is probably wrong.\n\nOption B claims Erectus couldn't use tools"
+
+--- pid 5004 [k75] gold=E final=E forced=E forced_correct=True label=True
+    stated-pattern hits in thinking: []
+    ...TAIL OF PREFIX: "ze around 600-750 cm³, while erectus was around 800-1250 cm³. So E seems correct.\n\nOption F: Erectus was short-lived. Not sure about lifespan. Maybe they had longer lifespans? Not sure, but I don't think this is a key difference. Maybe not the answer.\n\nOption G: Erectus had smaller body size. Wait, no. I think erectus was more robust, with a larger body compared to habilis. Habilis was smaller and more ape-like. So G"
+
+--- pid 8052 [k25] gold=D final=D forced=A forced_correct=False label=True
+    stated-pattern hits in thinking: []
+    ...TAIL OF PREFIX: 'equality. Wait, but since I have factored out a 6, adding and subtracting inside the parentheses will affect the overall expression. Let me write that out:\n\n$6\\left[ j^2 - \\frac{2}{3}j + \\frac{1}{9} - \\frac{1}{9} \\right] + 12$. \n\nWhich can be rewritten as:\n\n$6\\left[ \\left(j^2 - \\frac{2}{3}j + \\frac{1}{9}\\right) - \\frac{1}{9} \\right] + 12$.\n\nNow, the expression inside the brackets is a perfect square trinomial. Let me'
+
+--- pid 8052 [k75] gold=D final=D forced=D forced_correct=True label=True
+    stated-pattern hits in thinking: ['C']
+    ...TAIL OF PREFIX: "it, but let me check if there's another way to write it? Maybe I made a mistake in signs?\n\nAlternatively, perhaps I need to factor differently? Let me try another approach. \n\nSuppose I want to write 6j² -4j +12 as c(j + p)^2 + q. \n\nExpanding c(j + p)^2 + q gives c(j² + 2pj + p²) + q = cj² + 2cpj + cp² + q. \n\nComparing coefficients with original expression 6j² -4j +12:\n\nCoefficient of j²: c = 6.\n\nCoefficient of j: 2cp"
+
+--- pid 10827 [k25] gold=B final=A forced=A forced_correct=False label=False
+    stated-pattern hits in thinking: []
+    ...TAIL OF PREFIX: 'on says they "deal with corrupt dictators," which might imply active involvement, not just ignoring. \n\nOption H: politicians who accept bribes. This is similar to the dictator\'s own actions, but the corporation is different. \n\nOption I: all of the above. If Singer uses multiple analogies, but I need to check if that\'s the case. \n\nOption J: murderers of those who witness crimes. Not sure about this one. \n\nNow, I think'
+
+--- pid 10827 [k75] gold=B final=A forced=A forced_correct=False label=False
+    stated-pattern hits in thinking: ['A', 'I', 'B', 'A', 'A', 'A']
+    ...TAIL OF PREFIX: "ively complicit. For example, if a corporation sells weapons to a dictator, they are enabling the dictator's crimes. So, they are accomplices. \n\nTherefore, the answer would be A. \n\nBut let me check another angle. If the corporation is dealing with a corrupt dictator, they might be enabling the dictator's ability to commit crimes, making them accomplices. \n\nAlternatively, if the dictator is stealing from the poor, and"
+
+--- pid 11411 [k25] gold=I final=C forced=A forced_correct=False label=False
+    stated-pattern hits in thinking: []
+    ...TAIL OF PREFIX: "s.\n\nBut I need to confirm if this formula is correct. Alternatively, maybe the formula for the pitch diameter of the worm is:\n\n$ d_w = \\frac{L}{\\pi} $\n\nBut that would be for a single-threaded worm. If it's triple-threaded, then maybe it's different. Wait, I think I need to check the standard formula for worm pitch diameter. \n\nIn worm gear systems, the pitch diameter of the worm is calculated as:\n\n$ d_w = \\frac{L}{\\pi"
+
+--- pid 11411 [k75] gold=I final=C forced=C forced_correct=False label=False
+    stated-pattern hits in thinking: ['C']
+    ...TAIL OF PREFIX: 'he number of threads. If the diametral pitch P is the same for both the worm and the gear, then:\n\nFor the worm, the lead L = π * d_w * tan(λ), where λ is the lead angle. But without knowing λ, we cannot proceed. Alternatively, if we use the relation between the worm and gear teeth.\n\nThe gear ratio (GR) is the number of teeth on the gear divided by the number of threads on the worm. So, GR = N_g / N_w = 32 / 3 ≈ 10.66'
+
+--- pid 7151 [k25] gold=H final=H forced=I forced_correct=False label=True
+    stated-pattern hits in thinking: []
+    ...TAIL OF PREFIX: "hange for resources. No, that's backwards. Households receive wages, not pay them.\n\nOption E: Firms supply wage payments to households in exchange for revenues. Hmm, firms pay wages (which is a factor payment) in exchange for resources (labor). So the exchange is firms pay wages (which is a payment to households) for resources (labor) from households. So the correct exchange would be households providing resources to"
+
+--- pid 7151 [k75] gold=H final=H forced=H forced_correct=True label=True
+    stated-pattern hits in thinking: ['H', 'I', 'H', 'H', 'H', 'I']
+    ...TAIL OF PREFIX: 'en households and firms. Both are direct. But the question says "the most direct exchange." Maybe the answer is when households provide resources to firms in exchange for wages, but since that\'s not an option, the closest is option I, but it\'s incorrect. Or maybe the answer is option H.\n\nAlternatively, maybe the answer is option I, but I\'m confused.\n\nWait, let me check some references. In the circular flow model, the'
+
+--- pid 1205 [k25] gold=H final=C forced=H forced_correct=True label=False
+    stated-pattern hits in thinking: []
+    ...TAIL OF PREFIX: 'ance would touch and concern the land, so it would run with the lease. Therefore, the assignees (doctor and dentist) would be bound by the covenant. \n\nBut the original tenant had assigned the lease. So if the covenant runs with the lease, then the doctor and dentist would be responsible for maintaining insurance. But the doctor had $50k, and the dentist had none. However, the landlord is suing the original tenant. \n\n'
+
+--- pid 1205 [k75] gold=H final=C forced=H forced_correct=True label=False
+    stated-pattern hits in thinking: []
+    ...TAIL OF PREFIX: 't transfers the obligations. \n\nHowever, if the covenant is one that runs with the land, then the assignee is bound. \n\nSo, if the covenant runs with the land, then the assignees are responsible. If not, the original tenant is still responsible. \n\nThe question is whether the covenant runs with the land. \n\nThe Rule in Spencer\'s Case says that a covenant will run with the land if it "touches and concerns" the land. \n\nThe'
+
+--- pid 4716 [k25] gold=B final=B forced=B forced_correct=True label=True
+    stated-pattern hits in thinking: []
+    ...TAIL OF PREFIX: " US involvement in Vietnam was primarily to prevent the spread of communism, right? That's where the Containment doctrine comes in. Containment was the US policy to prevent the spread of communism, especially after the Soviet Union and China were seen as communist. The Domino Theory was part of that, suggesting that if one country fell to communism, others would follow. But the question is about the doctrine that led"
+
+--- pid 4716 [k75] gold=B final=B forced=B forced_correct=True label=True
+    stated-pattern hits in thinking: ['B', 'B']
+    ...TAIL OF PREFIX: ' So the conflict (Vietnam War) is a result of the Containment doctrine. Therefore, the answer is B. Containment. \n\nBut wait, the options also include the Domino Theory (F). Is the question asking which doctrine led to the conflict? The Domino Theory is a theory that explains why the US was involved (if one country falls, others will), but the actual doctrine that led to the conflict is Containment. So the answer is B'
+
+--- pid 7629 [k25] gold=A final=C forced=C forced_correct=False label=False
+    stated-pattern hits in thinking: []
+    ...TAIL OF PREFIX: 'g. But the question is about the immediate impact. \n\nWait, the question says "how does this withdrawal potentially impact money in circulation?" So, if Mommy Morebucks takes $1 million out of her checking account and keeps it as cash, then the checking account balance decreases by $1 million, and the cash in circulation increases by $1 million. So the total money supply (which includes both checking accounts and cash'
+
+--- pid 7629 [k75] gold=A final=C forced=C forced_correct=False label=False
+    stated-pattern hits in thinking: ['C', 'C', 'C', 'C', 'C']
+    ...TAIL OF PREFIX: 'ion". So if the withdrawal is done, the immediate effect is that the money is just moved from the bank to the person\'s cash. So the total money in circulation is the same. \n\nTherefore, the correct answer is C. No impact. \n\nBut let me check the options again. The options include C as "No impact". So that\'s the answer. But let me check if there\'s a trick here. \n\nWait, maybe the question is about the money supply versus'
+
+--- pid 10950 [k25] gold=G final=G forced=G forced_correct=True label=True
+    stated-pattern hits in thinking: ['A']
+    ...TAIL OF PREFIX: 'is similar to "if...then". So G is correct? Let me check again. The original is (~A ∨ ~B) ⊃ C, which is "If (~A ∨ ~B), then C." Option G says "Either ~A or ~B entails C", which is the same as the implication. So G is correct. But let me check other options.\n\nOption H: "If Marina reads a Percy Jackson book or Izzy plays Minecraft, then Emily won\'t stop working." That would be (A ∨ B) ⊃ ~C. Which is the contrapositive?'
+
+--- pid 10950 [k75] gold=G final=G forced=G forced_correct=True label=True
+    stated-pattern hits in thinking: ['I', 'I', 'I', 'I', 'I', 'I']
+    ...TAIL OF PREFIX: ' Jackson book or Izzy not playing Minecraft entails that Emily stops working."\n\nYes, that\'s exactly (~A ∨ ~B) ⊃ C. So that\'s correct. Therefore, the answer should be G. But let me check if there\'s any other option that could be correct. For example, option I is similar but with "neither...nor", which is different. So no.\n\nTherefore, the correct answer is G. However, looking back, I think I might have missed something'
+
+--- pid 6957 [k25] gold=C final=C forced=A forced_correct=False label=True
+    stated-pattern hits in thinking: []
+    ...TAIL OF PREFIX: 'ises with an increase in aggregate demand (option C), that would mean that the multiplier is lessened because the increase in AD is causing prices to rise instead of output. Therefore, the multiplier effect is smaller. Wait, but the question is about when the effect is lessened. So if the price level rises with an increase in aggregate demand, that would mean that the multiplier is lessened because the increase in AD'
+
+--- pid 6957 [k75] gold=C final=C forced=C forced_correct=True label=True
+    stated-pattern hits in thinking: ['C', 'C', 'A', 'A', 'C']
+    ...TAIL OF PREFIX: 'sical range where AS is vertical. Therefore, the multiplier effect is lessened. \n\nAlternatively, if the price level is constant with a decrease in AD (option B), that would be in the Keynesian range, where the multiplier is larger. So, the multiplier effect is not lessened. \n\nSo, the correct answer would be option C. \n\nBut let me check other options. Option A: price level rises with a decrease in AD. If AD decreases,'
+
+--- pid 2582 [k25] gold=G final=H forced=C forced_correct=False label=False
+    stated-pattern hits in thinking: []
+    ...TAIL OF PREFIX: ' words are spoken," but I think that\'s when they start to use actual words, not necessarily when babbling changes. So maybe I is incorrect.\n\nOption J: different once first words are spoken. That\'s possible, but the question is about early babbling. So maybe J is about after the first words, which is later. The question is about early babbling, so J might not be the correct answer here.\n\nNow, going back. The key point'
+
+--- pid 2582 [k75] gold=G final=H forced=H forced_correct=False label=False
+    stated-pattern hits in thinking: ['H', 'H', 'H', 'C', 'H', 'H']
+    ...TAIL OF PREFIX: 'at early babbling is initially universal, but as the infant is exposed to their language, their babbling incorporates the phonemes of that language. So the statement that "includes only the phonemes found in the language of the infant\'s community" (H) is correct. Because even though early babbling is universal, by the time they start to babble more, they are using the phonemes of their language. So H is correct.\n\nBut'
+
+--- pid 10672 [k25] gold=A final=A forced=B forced_correct=False label=True
+    stated-pattern hits in thinking: []
+    ...TAIL OF PREFIX: ' same as T=3? Because all pixels with intensity ≤4 are 0,1,3. Because 5 is greater than 4. So the count for Group A would be 1+1+2=4 pixels (0,1,3) and Group B would be 1+4+3=8 pixels (5,6,7). Wait, but 5 is 1, 6 is 4, 7 is 3. So total 1+4+3=8. So with T=3, Group A is 0,1,3 (counts 1+1+2=4) and Group B is 5,6,7 (counts 1+4+3=8). Similarly, with T=4, Group A is same as T=3 because there are no pixels with intensity 4.'
+
+--- pid 10672 [k75] gold=A final=A forced=A forced_correct=True label=True
+    stated-pattern hits in thinking: ['A', 'A']
+    ...TAIL OF PREFIX: '4. \n\nAlternatively, maybe the question is using the threshold that is the intensity value where the cumulative distribution function has a significant change. \n\nLet me calculate the cumulative counts:\n\nFor each intensity value, the cumulative count up to that value:\n\nIntensity 0: 1\n\nIntensity 1: 1+1=2\n\nIntensity 3: 2+2=4\n\nIntensity 5: 4+1=5\n\nIntensity 6: 5+4=9\n\nIntensity 7: 9+3=12\n\nSo the cumulative counts are:\n\nAt 0'
+
+--- pid 12046 [k25] gold=A final=A forced=A forced_correct=True label=True
+    stated-pattern hits in thinking: []
+    ...TAIL OF PREFIX: 'vg = 0.664 * 567.4 * 0.887. \n\nLet me compute that. \n\nFirst, multiply 0.664 * 567.4. \n\nLet me compute 0.664 * 500 = 332. \n\n0.664 * 67.4 ≈ 0.664 * 60 = 39.84, 0.664 * 7.4 ≈ 4.91. So total ≈ 39.84 + 4.91 ≈ 44.75. \n\nSo total ≈ 332 + 44.75 ≈ 376.75. \n\nThen multiply by 0.887: \n\n376.75 * 0.887 ≈ Let me compute 376.75 * 0.8 = 301.4, 376.75 * 0.08 = 30.14, 376.75 * 0.007 ≈ 2.637. \n\nAdding up: 301.4 + 30.14 = 331.54 + 2.637 ≈ '
+
+--- pid 12046 [k75] gold=A final=A forced=A forced_correct=True label=True
+    stated-pattern hits in thinking: ['A']
+    ...TAIL OF PREFIX: 'ritical value. \n\nLet me check what happens if I use the turbulent flow correlation. \n\nFor turbulent flow, the average Nusselt number is given by Nu_avg = 0.0296 * Re^0.8 * Pr^0.333. \n\nLet me try that. \n\nUsing Re = 2.93 × 10^5, Pr = 0.707. \n\nNu_avg = 0.0296 * (2.93 × 10^5)^0.8 * (0.707)^0.333 \n\nFirst, compute Re^0.8. \n\nLet me compute ln(2.93 × 10^5) = ln(2.93) + ln(10^5) ≈ 1.074 + 11.512 ≈ 12.586 \n\nMultiply by 0.8: 12'
