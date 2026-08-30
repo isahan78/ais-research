@@ -388,5 +388,22 @@
     "config_hash": "ad65ecc04fb2",
     "input_file": "/Users/IsahanKhan/ais-research/experiment/outputs/block2/k1/acts.npz",
     "acts_config_hash": "ad65ecc04fb2"
+  },
+  "text_floor": {
+    "features": [
+      "prefix_token_count",
+      "prompt_token_count"
+    ],
+    "auc": 0.641,
+    "auc_ci95": [
+      0.517,
+      0.7511
+    ],
+    "n_train": 187,
+    "n_test": 102,
+    "lineage": {
+      "config_hash": "ad65ecc04fb2",
+      "input_file": "/Users/IsahanKhan/ais-research/experiment/outputs/block2/k1/prefixes.jsonl"
+    }
   }
 }

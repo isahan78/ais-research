@@ -84,53 +84,50 @@ Artifact: `outputs/calibration/mmlu_pro_8B_probe.log`
 
 ---
 
-## Run 005 — Block 2: the actual experiment (IN PROGRESS)
-**2026-08-30 05:40 UTC · RTX 4090 (Runpod secure, EU-RO-1) · commit `0677f09` · gen config hash `3f151bfa10e2`**
-Qwen3-8B · **MMLU-Pro** · n=300 · thinking budget 16,384 · truncation grid k ∈ {1, 10, 25, 50, 75, 90}
+## Run 005 — Block 2 COMPLETE: the full Δ(k) curve
+**2026-08-30 05:40–09:09 UTC · RTX 4090 (Runpod secure, EU-RO-1) · commit `0677f09` · terminated and verified**
+Qwen3-8B · MMLU-Pro · n=300 · thinking budget 16,384 · k ∈ {1, 10, 25, 50, 75, 90} · n_train=187 / n_test=102 · **total cost ≈ $3.30**
 
-### Generation (complete)
-| Metric | Value | Pre-registered |
+### Generation
+300 traces · **237 correct / 52 incorrect** · **18.0% error** on 289 gradeable · truncated 2.7% · ungradeable 3.7%.
+Pre-registered error rate: owner 40%, Tyler 23% → **both over; Tyler closer**. 52 negatives is a real minority class (MATH-500's ceiling was ~15).
+
+### The headline table (AUC, higher = better predictor of final correctness)
+
+| k | probe (best layer) | forced-answer | tuned TF-IDF | crude floor | **Δ = S_probe − max(S_text)** | CI excl. 0 |
+|---:|---:|---:|---:|---:|---:|:--:|
+| **1** *(control)* | 0.621 | — | 0.732 | 0.641 | **−0.111** [−0.235, +0.012] | no |
+| 10 | 0.761 | 0.706 | **0.774** | 0.618 | **−0.013** [−0.151, +0.117] | no |
+| 25 | 0.647 | 0.745 | **0.781** | 0.613 | **−0.135** [−0.244, −0.036] | **yes** |
+| 50 | 0.681 | **0.842** | 0.777 | 0.613 | **−0.162** [−0.325, +0.011] | no (grazes) |
+| 75 | 0.677 | **0.848** | 0.776 | 0.613 | **−0.171** [−0.308, −0.042] | **yes** |
+| 90 | 0.701 | **0.961** | 0.776 | 0.611 | **−0.260** [−0.375, −0.156] | **yes** |
+
+### Pre-registration: BOTH FORECASTS WRONG, SAME DIRECTION
+
+| | Predicted Δ at k=50 | Actual |
 |---|---|---|
-| Traces | 300 (420 s… actually 76 min) | — |
-| Correct / **incorrect** | 237 / **52** | — |
-| **Error rate on gradeable** | **18.0%** (52/289) | Owner 40% · Tyler 23% → **Tyler closer, both over** |
-| Truncated mid-thinking | 8 (2.7%) | Decision B fully vindicated (was 30% at 8k) |
-| Ungradeable | 11 (3.7%) | — |
+| Owner (Isahan) | **+0.10** (Camp Internals) | **−0.162** |
+| Tyler | **+0.02** (Camp Text) | **−0.162** |
 
-**52 negatives** — a real minority class. MATH-500's hard ceiling was ~15. The dataset change was correct.
+Both predicted the probe would win. It came **third**. The shared blind spot was the *text* side: owner predicted S_text ≈ 0.60, Tyler ≈ 0.70; it measured **0.842**. Tyler was directionally right and still badly miscalibrated on magnitude.
 
-### k=1 — the near-zero control (prompt alone, one thinking token)
-Added at Tyler's request while the pod was warm; **the control that decides whether the whole curve is meaningful.**
+### Findings
 
-| Layer | AUC |
-|---|---|
-| 9 | 0.608 |
-| 18 | 0.589 |
-| **27** | **0.621** (CI95 0.503–0.741) |
+**1. Δ(k) is negative and widens monotonically after k=10.** The probe plateaus at ~0.68 while the best text reader climbs from 0.77 to 0.96. Three of six cuts have CIs excluding zero, all negative. On this evidence, in this setting, **a linear probe on internals does not beat the strongest cheap text reader — and the gap grows as the model reasons.**
 
-Floor p95 = 0.669 → **MARGINAL** (below the floor's 95th percentile).
+**2. The winner is the baseline with no precedent in the audited papers.** Forced-answer — close the think block, make the model commit — rises 0.706 → **0.961**. For predicting where a reasoning model is heading, *asking it* beats *reading its internals*, and costs one short generation instead of a trained probe.
 
-**The confound is ruled out.** Reading the question alone does *not* reliably predict correctness (0.621, not clearing noise), while 10% of thinking jumps to 0.761. So the probe reads something about the reasoning, not merely how hard the question looks — the failure mode [No Answer Needed](https://arxiv.org/abs/2509.10625) demonstrates is real for others but not operating here. Measured, not asserted.
+**3. The k=1 control does its job, and complicates the story usefully.** The probe on the prompt alone scores 0.621 and does **not** clear the noise floor (p95 ≈ 0.669) — so probe signal at k≥10 is not mere question difficulty. **But TF-IDF at k=1 scores 0.732**, and stays ~0.78 from k=25 onward: the text classifier is substantially a *question-difficulty detector*, nearly flat in k. Forced-answer is the only reader that tracks the reasoning itself. Any honest write-up must separate these.
 
-### k=10 — first Δ
-| Reader | AUC |
-|---|---|
-| **Tuned TF-IDF text classifier** | **0.7735** ← best text reader |
-| Probe (layer 27) | 0.7605 |
-| Forced-answer (on-policy) | 0.7057 |
-| Crude text floor (prefix len + prompt len) | 0.6177 |
+**4. The model commits early.** Forced-answer agreement with the final answer: 72% (k=25) → 88% (k=50) → 94% (k=75) → 97% (k=90). The commitment-boundary effect, measured directly.
 
-**Δ = −0.013, CI95 [−0.151, +0.117]** (paired bootstrap). n_train=187 / n_test=102.
+**5. Strong baselines were load-bearing.** Against the crude floor alone, Δ at k=50 would have read **+0.07** and looked like a clean win. The tuned classifier and forced-answer removed it. The project's own thesis, demonstrated on its own result before publication.
 
-**The probe does not beat the text.** CI comfortably contains zero ⇒ *no detectable difference*, not "text wins".
-
-**Why the strong baseline mattered, concretely:** against the crude floor alone, Δ would have read **+0.14** — a clean, publishable-looking win. The tuned classifier (48-config grid, StratifiedGroupKFold inside the training split only) is what removed it. This is the project's own thesis demonstrated on its own result before publication.
-
-Δ here is an **upper bound**: the LLM judge has not run, and adding any reader can only raise S_text and lower Δ. Recorded in `analysis.json`.
+### Caveats
+n_test = 102 · single model, single dataset · **Δ is an upper bound** (LLM judge not yet run; adding a reader can only lower Δ) · k=1 forced-answer missing (OOM casualty, pod terminated before retry) · probe non-monotonic across k (0.761 → 0.647 → 0.681) is likely small-n noise and should not be read as a trend.
 
 ### Incidents
-- **CUDA OOM at k=1 forced-answer.** Killing the grid by PID left a vLLM child holding 11 GiB; the new loop's engine collided with it. k=1 forced-answer must be re-run. Lesson: verify the GPU is clear before relaunching, not just that the parent died.
-- **Pod CPU fitting was ~55× slower than the laptop** (55 min vs ~1 min per probe). Switched the pod to GPU-only work (truncate → forced-answer → harvest); all probe/floor/classifier/analysis now runs locally. Saved ~4 h of pod time (~$3).
-
-### Status
-k=1 ✅ · k=10 ✅ · k=25/50/75/90 in progress. Pod ~$2.70 so far.
+- **CUDA OOM at k=1 forced-answer** — killing the grid by PID left a vLLM child holding 11 GiB. Lesson: verify the GPU is clear before relaunching, not just that the parent died.
+- **Pod CPU fitting ~55× slower than the laptop** (55 min vs ~1 min per probe). Switched the pod to GPU-only; saved ~4 h (~$3).
+- **Tyler launched the k=50 analysis three times concurrently**, racing on the same files. No data lost. Then mis-diagnosed a JSON key error as file corruption and reported it as such — corrected. Third instance this session of acting before verifying state.
