@@ -270,3 +270,33 @@ A fairly-tuned linear probe on Qwen3-8B's residual stream (flat ~0.61–0.70) do
 
 ### Process note
 Built during three laptop-sleep interruptions that killed the analysis agent mid-work; artifacts survived on disk each time and the final tests were completed by hand. Suite: 439 passing.
+
+---
+
+## Runs 008/009 — Fixed-length cuts + gold-free confidence: the final data
+**2026-08-31 01:10–02:04 UTC · RTX 4090 (US-NC-1, CUDA 13.0) · commit `24dc0d4` · pod terminated & verified · session ≈ $1.05 (incl. a bad-host detour: first pod drew a CUDA 12.8 host that current torch refuses)**
+
+Reused the 300 Block-2 traces (no generation cost). Population fixed once: traces with ≥1024 thinking tokens ⇒ **242 traces, 192/50**, identical at every cut — survivor bias structurally impossible. Cuts at exactly N ∈ {64,128,256,512,1024} thinking tokens ⇒ within a cut, prefix length carries zero information: **the Run 007 length leak cannot exist here by construction.**
+
+### Honest results (probe: layer+C by train-CV, Run 010 protocol; n_test=85, only 16 negatives)
+
+| N | probe (honest) | CI95 | tuned TF-IDF | forced-confidence (gold-free) | Δ (probe−TF-IDF) |
+|---:|---:|---|---:|---:|---:|
+| 64 | 0.685 | [0.52, 0.83] | 0.563 | 0.546 | **+0.12** |
+| 128 | 0.587 | [0.44, 0.73] | 0.571 | 0.524 | +0.02 |
+| 256 | 0.452 | [0.29, 0.61] | 0.612 | 0.542 | −0.16 |
+| 512 | 0.605 | [0.46, 0.74] | 0.629 | 0.621 | −0.02 |
+| 1024 | 0.618 | [0.47, 0.75] | 0.650 | 0.639 | −0.03 |
+
+### Findings
+
+**1. The TF-IDF collapse is the solid result.** From ~0.78 (k% protocol) to **0.56–0.65** at every fixed-length cut. The text reader's apparent dominance in Block 2 does not survive removing the protocol's length information. **Confound to state plainly:** two things changed at once — the cut geometry AND the population (all-long ⇒ all-hard traces). Run 010 showed TF-IDF's k%-signal was length-orthogonal (partial r ≈ 0.43), so the likeliest reconciliation is that its signal was *difficulty vocabulary*, which has little variance inside an all-hard population. Fixed-length cuts and population restriction each destroy part of its edge; this design cannot fully separate the two.
+
+**2. Probe vs text under fixed cuts: UNRESOLVED.** Δ swings +0.12 → −0.16 with no stable sign; every CI is ~0.3 wide (16 negatives). The N=64 point (probe 0.685, CI barely excluding 0.5, Δ=+0.12) is suggestive — the direction Pre-registration II called — but one point at n=85 is not a claim.
+
+**3. Pre-registration II: substantially vindicated on its load-bearing clause, after we publicly doubted it.** Sealed forecast: "S_text drops materially; probe roughly unchanged; Δ shrinks toward zero, possibly slightly positive at small budgets." The S_text drop happened (0.78→~0.6). The Δ sign at small N matches at face value but is unresolved statistically. Notably, Run 010's length-control evidence led us to record — before this run — that the forecast was "probably wrong." It wasn't. The lesson cuts the other way this time: a partial correlation on one population does not predict behaviour on another.
+
+**4. Forced-confidence (the gold-free monitor) is honest but weak-to-moderate:** ~0.52–0.55 with little reasoning to read, rising to ~0.62–0.64 by N≥512 — always below TF-IDF. The deployable version of "just ask the model" carries real but modest signal, nothing like its invalid gold-reading predecessor's 0.96.
+
+### Assessment
+Data collection for this project is now closed. Final tally: the k%-truncation protocol used by the audited literature leaks eventual trace length; under a leak-free protocol the strongest text reader loses most of its advantage and the probe-vs-text question becomes genuinely open at this sample size — an honest "unresolved, here is exactly what it would take to resolve it" (≈4× the negatives).
