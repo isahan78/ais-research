@@ -228,3 +228,45 @@ This is a limitation of the *protocol*, not of our implementation — and the au
 
 ### Assessment
 The project's instrument caught its own headline baseline cheating, four days before submission, using a control built for a different purpose. The corrected result is weaker and more honest: **a probe on internals does not clearly beat a tuned text classifier, most of the text side is trace length, and the length signal is an artifact of the truncation protocol the literature uses.**
+
+---
+
+## Run 010 — Honest probe + length control (local, no GPU)
+**2026-08-30 · analysis of existing Block-2 artifacts · scripts: `honest_probe.py`, `length_control.py`**
+
+### Honest probe (layer AND C selected by CV inside the training split only)
+
+| k | reported (test-selected, C=1.0) | **honest** |
+|---:|---:|---:|
+| 1 | 0.621 | 0.609 |
+| 10 | 0.761 | **0.697** |
+| 25 | 0.647 | 0.627 |
+| 50 | 0.681 | 0.695 |
+| 75 | 0.677 | 0.668 |
+| 90 | 0.701 | 0.701 |
+
+The honest curve sits in a flat 0.61–0.70 band. The k=10 outlier (0.761) was the test-selection artifact. Adjacent-cut differences: paired-bootstrap CIs all include zero ⇒ **the previously reported "non-monotonicity" does not survive honest selection; the curve is flat within noise.** These are the probe numbers the write-up quotes.
+
+### Length control — and a result that CORRECTS Run 007's interpretation
+
+Partial correlation of each reader's score with the label, controlling for log prefix length (test rows):
+
+| k | probe (honest) | **tuned TF-IDF** | length-only |
+|---:|---:|---:|---:|
+| 10 | 0.33 | **0.39** | −0.06 |
+| 25 | 0.15 | **0.42** | −0.06 |
+| 50 | 0.34 | **0.44** | −0.06 |
+| 75 | 0.33 | **0.44** | −0.06 |
+| 90 | 0.08 | **0.44** | −0.06 |
+
+And `corr(TF-IDF score, log length)` ≈ **−0.04 to +0.02** — essentially zero.
+
+**Run 007 said the TF-IDF classifier was "substantially a question-difficulty/trace-length detector." That interpretation is WRONG and is hereby corrected.** TF-IDF's signal is nearly orthogonal to length and survives length control at partial r ≈ 0.42–0.44 — the strongest length-independent signal of any reader, above the honest probe everywhere. What Run 007 actually established is that *a length-only reader matches TF-IDF's AUC* — two readers reaching similar AUC by **different routes**, not one reader secretly being the other. The length leak is still real (corr(prefix len, full len) = 0.9999999, and length alone scores ~0.69), but it is a property of the PROTOCOL and of the length-only reader — not an explanation of TF-IDF.
+
+**Consequence for sealed Pre-registration II, noted BEFORE Run 008 executes:** the sealed forecast predicts S_text (TF-IDF) "drops materially" under fixed-length cuts because it "loses the length crutch." This length-control evidence suggests TF-IDF has no length crutch to lose, i.e. **the sealed forecast is probably wrong a second time.** Recorded now so the pre-registration's test is clean: if TF-IDF holds ~0.78 under fixed-length cuts, the forecast fails and Δ stays negative.
+
+### Bottom line after all corrections
+A fairly-tuned linear probe on Qwen3-8B's residual stream (flat ~0.61–0.70) does not beat a tuned bag-of-words reader of the trace text (flat ~0.77–0.78, length-independent) at any cut, on n_test=102. The commitment curve (59→97%) and the k=1 controls stand. Run 008 (fixed-length cuts) now tests the length-leak hypothesis directly, with its prediction sealed and already under suspicion.
+
+### Process note
+Built during three laptop-sleep interruptions that killed the analysis agent mid-work; artifacts survived on disk each time and the final tests were completed by hand. Suite: 439 passing.

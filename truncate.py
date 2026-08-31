@@ -99,6 +99,16 @@ def build_prefix(
 
 
 def main() -> None:
+    # Absolute-cut mode sets truncation_k_percent to the TOKEN COUNT N as a cut
+    # label (see config.py), which this fraction-based stage would silently
+    # misread as "N percent" and clamp to nearly the whole trace. Refuse.
+    if getattr(CONFIG, "truncation_abs_n", None) is not None:
+        raise SystemExit(
+            f"HALT: EXPERIMENT_ABS_N={CONFIG.truncation_abs_n} is set, but this is the "
+            f"fixed-FRACTION truncation stage. Run `python -m experiment.truncate_abs` "
+            f"instead (or unset EXPERIMENT_ABS_N)."
+        )
+
     traces_path = CONFIG.traces_path
     results: List[PrefixResult] = []
     meta_in = None

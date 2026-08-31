@@ -64,7 +64,11 @@ BASELINE_SCHEMA_VERSION = 1
 # its test-time score is a function of the PREFIX ALONE — the same information
 # the probe sees. Two readers were withdrawn on 2026-08-30 after the red-team;
 # see EXCLUDED_FROM_S_TEXT below and RESULTS.md Run 007.
-TEXT_BASELINE_NAMES: Tuple[str, ...] = ("text_classifier",)
+TEXT_BASELINE_NAMES: Tuple[str, ...] = ("text_classifier", "forced_confidence")
+# `forced_confidence` is the gold-free replacement for the withdrawn
+# `forced_answer` (RESULTS.md Run 007, EXPERIMENT.md §12b): it scores the
+# model's CONFIDENCE in its own interrupted answer, a function of the prefix
+# alone. A run that never produced it is simply recorded as missing.
 
 # Reported separately, never pooled into S_text. Each entry: why it is excluded.
 EXCLUDED_FROM_S_TEXT: dict = {

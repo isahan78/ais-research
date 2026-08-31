@@ -12,7 +12,7 @@ import hashlib
 import json
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 # Token ids verified against Qwen/Qwen3-8B tokenizer (agent-checked 2026-08-16).
 # Both are special:false, so skip_special_tokens=True preserves them in decodes.
@@ -47,6 +47,28 @@ class Config:
     # --- truncation (stage 2) ----------------------------------------------
     truncation_k_percent: int = 50     # single point for Gate 1; the full grid is deferred
     min_thinking_tokens: int = 4       # thinking blocks shorter than this are degenerate
+
+    # --- absolute-token truncation (stage 2b, truncate_abs.py) --------------
+    # Run 007 found corr(prefix thinking tokens at k%, FULL trace thinking
+    # tokens) = 0.99999999: cutting at a fixed FRACTION hands every reader the
+    # trace's eventual length. Cutting at a fixed TOKEN COUNT removes the leak
+    # structurally -- within a cut, every prefix is exactly the same length.
+    #
+    # `truncation_abs_n` is None in fraction mode and the token count N in
+    # absolute mode (set via EXPERIMENT_ABS_N; see _from_env). When it is set,
+    # `truncation_k_percent` is ALSO set to N so that every stage that labels a
+    # cut by `truncation_k_percent` (train_probe -> results.json, and hence the
+    # `pid@k<label>` row keys analysis.py pairs on) labels this cut by N with no
+    # edit to those stages. `cut_mode`/`abs_n` in the prefixes.jsonl meta line
+    # and `truncation_abs_n` here keep the artifact self-describing.
+    truncation_abs_n: Optional[int] = None
+    # THE POPULATION IS FIXED ONCE, BEFORE ANY CUT. Only traces with at least
+    # this many thinking tokens enter the absolute-cut experiment, and the SAME
+    # set is used at every N. Excluding "traces shorter than N" per cut would
+    # be label-correlated (short traces are disproportionately CORRECT) and
+    # would reintroduce exactly the survivor bias decision B removed.
+    abs_population_min_thinking: int = 1024
+    abs_n_grid: Tuple[int, ...] = (64, 128, 256, 512, 1024)
 
     # --- harvest (stage 3, HF prefill-only) ---------------------------------
     layers: Tuple[int, ...] = (9, 18, 27)  # ~25/50/75% depth of 36; all below the [-1] post-norm trap
@@ -98,15 +120,55 @@ def _from_env() -> Config:
 
     The override IS part of the config hash (k is a data-affecting setting),
     so each grid point's artifacts carry a distinct, traceable hash.
+
+    EXPERIMENT_ABS_N switches stage 2 to ABSOLUTE-token truncation (Run 008):
+    the prefix keeps exactly N thinking tokens instead of k% of them. It is
+    mutually exclusive with EXPERIMENT_K, it also sets `truncation_k_percent`
+    to N so downstream cut labels and `pid@k<label>` row keys stay unique per
+    cut, and — like k — it is inside the config hash.
+    EXPERIMENT_ABS_POP_MIN overrides the fixed-population threshold (default
+    1024 = max of `abs_n_grid`); lower it only together with the grid.
     """
     import os
 
     k_raw = os.environ.get("EXPERIMENT_K")
+    abs_raw = os.environ.get("EXPERIMENT_ABS_N")
+    pop_raw = os.environ.get("EXPERIMENT_ABS_POP_MIN")
     out_raw = os.environ.get("EXPERIMENT_OUTPUT_DIR")
-    if k_raw is None and out_raw is None:
+    if k_raw is None and out_raw is None and abs_raw is None and pop_raw is None:
         return Config()
 
     overrides = {}
+    if abs_raw is not None:
+        if k_raw is not None:
+            raise SystemExit(
+                "HALT: EXPERIMENT_K and EXPERIMENT_ABS_N are mutually exclusive — "
+                "a cut is either a fraction of the trace or a fixed token count, "
+                "never both. Unset one."
+            )
+        n = int(abs_raw)
+        pop_min = int(pop_raw) if pop_raw is not None else Config.abs_population_min_thinking
+        if n < 1:
+            raise SystemExit(
+                f"HALT: EXPERIMENT_ABS_N={n} must be >= 1 — a prefix needs at least "
+                f"one thinking token."
+            )
+        if n > pop_min:
+            raise SystemExit(
+                f"HALT: EXPERIMENT_ABS_N={n} exceeds the fixed population minimum "
+                f"{pop_min}. The population is chosen ONCE at "
+                f">= max(N) thinking tokens so the same problems are used at every "
+                f"cut; a larger N would silently drop traces per-cut, and short "
+                f"traces are disproportionately correct — that is exactly the "
+                f"label-correlated survivor bias this design removes. Raise "
+                f"EXPERIMENT_ABS_POP_MIN to at least {n} (and re-derive the whole "
+                f"grid) if you really mean it."
+            )
+        overrides["truncation_abs_n"] = n
+        # the cut LABEL: see the note on truncation_abs_n above.
+        overrides["truncation_k_percent"] = n
+    if pop_raw is not None:
+        overrides["abs_population_min_thinking"] = int(pop_raw)
     if k_raw is not None:
         k = int(k_raw)
         if not 1 <= k <= 99:
