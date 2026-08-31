@@ -218,12 +218,74 @@ def interactive(d):
     print(f"interactive -> {out}")
 
 
+
+def collect_abs():
+    """Fixed-length grid (Runs 008/009): honest probe + baselines per N."""
+    base = os.path.join(os.path.dirname(FIGDIR.rstrip("/")), "block2abs")
+    base = os.path.join(os.path.dirname(os.path.abspath(__file__)), "outputs", "block2abs")
+    hp = os.path.join(base, "honest_abs.json")
+    if not os.path.exists(hp):
+        return None
+    h = load_json(hp)
+    ns = sorted(int(n) for n in h)
+    return {
+        "n": ns,
+        "probe": [h[str(n)]["honest_auc"] for n in ns],
+        "probe_lo": [h[str(n)]["ci"][0] for n in ns],
+        "probe_hi": [h[str(n)]["ci"][1] for n in ns],
+        "tfidf": [h[str(n)]["tfidf"] for n in ns],
+        "conf": [h[str(n)]["confidence"] for n in ns],
+    }
+
+
+def fig4_protocols(d, a):
+    """Figure 4: the same readers under the leaky k% protocol vs fixed-length
+    cuts. The TF-IDF collapse (0.78 -> ~0.60) is the project's key finding."""
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(13, 5.2), sharey=True)
+    # left: k% protocol (length leak present). Use the HONEST probe curve
+    # (train-CV selection, Run 010) — the test-selected curve has a spurious
+    # 0.76 spike at k=10 and must never be plotted as "honest".
+    hp_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "outputs", "block2", "honest_probe.json")
+    honest = load_json(hp_path)["summary"]["honest_curve"] if os.path.exists(hp_path) else d["probe"]
+    ax1.plot(d["k"], d["tfidf"], "s-", color=C_TEXT, lw=2.5, label="tuned TF-IDF")
+    ax1.plot(d["k"], honest, "o-", color=C_PROBE, lw=2.5, label="probe (honest)")
+    ax1.set_title("k% protocol — leaks eventual trace length\n(corr with full length = 0.99999999)")
+    ax1.set_xlabel("k — % of thinking tokens")
+    # right: fixed-length protocol (leak impossible)
+    ax2.plot(a["n"], a["tfidf"], "s-", color=C_TEXT, lw=2.5, label="tuned TF-IDF")
+    ax2.fill_between(a["n"], a["probe_lo"], a["probe_hi"], alpha=0.15, color=C_PROBE)
+    ax2.plot(a["n"], a["probe"], "o-", color=C_PROBE, lw=2.5, label="probe (honest, CI band)")
+    ax2.plot(a["n"], a["conf"], "d-", color=C_LEN, lw=2, label="forced-confidence (gold-free)")
+    ax2.set_xscale("log", base=2)
+    ax2.set_xticks(a["n"]); ax2.set_xticklabels(a["n"])
+    ax2.set_title("Fixed-length cuts — leak structurally impossible\n(fixed population, 242 traces)")
+    ax2.set_xlabel("N — thinking tokens at cut (log scale)")
+    for ax in (ax1, ax2):
+        ax.axhline(0.5, color="black", lw=0.8, ls=":")
+        ax.set_ylim(0.40, 0.85)
+        ax.legend(loc="lower right", fontsize=10)
+    ax1.set_ylabel("held-out AUC")
+    ax1.annotate("TF-IDF ≈ 0.78", (50, 0.79), fontsize=11, color=C_TEXT)
+    ax2.annotate("TF-IDF collapses\nto 0.56–0.65", (128, 0.53), fontsize=11, color=C_TEXT)
+    fig.suptitle("The text reader's advantage was largely the protocol's length leak", y=1.02, fontsize=15)
+    fig.tight_layout()
+    fig.savefig(os.path.join(FIGDIR, "fig4_protocol_comparison.png"), dpi=200, bbox_inches="tight")
+    plt.close(fig)
+    print(f"figure 4 -> {FIGDIR}/fig4_protocol_comparison.png")
+
+
 def main():
     d = collect()
     os.makedirs(FIGDIR, exist_ok=True)
     with open(os.path.join(FIGDIR, "figure_data.json"), "w") as f:
         json.dump(d, f, indent=1)
     static_figs(d)
+    a = collect_abs()
+    if a:
+        fig4_protocols(d, a)
     if "--interactive" in sys.argv:
         interactive(d)
 

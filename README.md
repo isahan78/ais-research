@@ -1,29 +1,26 @@
-# Gate 1 smoke pipeline
+# The Probe–Text Gap — experiment pipeline
 
-Go/no-go for the MATS probe-audit project: on MMLU-Pro questions (dataset
-selectable in `config.py` — `dataset_kind` is `mmlu_pro` or `math500`), does a
-logistic probe on mid-trace Qwen3-8B activations beat a shuffled-label floor
-at k=50% thinking-token truncation?
+Do linear probes on a reasoning model's activations beat cheap text-only
+readers at predicting final-answer correctness from a truncated thinking
+trace? **Final answer after ten documented runs: the question is subtler
+than the literature's protocol can see.**
 
-MMLU-Pro was adopted on a measured base rate (RESULTS.md Run 004: 23% error, 0
-ungradeable, 12,032 items); MATH-500 stays selectable and its level filter
-applies to that path only. The row->record mapping is the only
-dataset-specific code and lives in `dataset_adapters.py` (pure, no torch).
+- Under the standard **k%-of-trace protocol**, the strongest text reader
+  (tuned TF-IDF, ~0.78) beats an honestly-tuned probe (~0.61–0.70) at every
+  cut — but that protocol **leaks the trace's eventual length** into every
+  reader (corr = 0.99999999 by construction).
+- Under **fixed-length cuts**, where the leak is structurally impossible,
+  TF-IDF collapses to 0.56–0.65 and probe-vs-text is **unresolved** at this
+  sample size (n_test=85, 16 negatives).
+- A forced-answer baseline that reached 0.96 was **withdrawn by our own
+  red-team**: its score read the gold answer key (RESULTS.md Run 007).
+- The clean, gold-free result: the model's interrupted answer matches its
+  final answer 59% → 97% across the trace — it commits long before it stops.
 
-Four stages, plain scripts, JSONL between them, one config
-(`config.py`). Every output is stamped with the config hash and the input
-file that produced it.
-
-```
-generate_traces.py  (vLLM)  -> outputs/traces.jsonl
-truncate.py                 -> outputs/prefixes.jsonl
-harvest_activations.py (HF) -> outputs/acts.npz (+ .lineage.jsonl)
-train_probe.py              -> outputs/results.json   <- the go/no-go number
-text_floor.py               -> adds the crude text baseline into results.json
-```
-
-**Target: Linux + CUDA, one 24 GB card (4090-class).** This does not run on
-a Mac and has no Mac fallbacks — only `tests/` runs anywhere.
+The full account: [EXPERIMENT.md](EXPERIMENT.md) (design + decision log,
+two sealed pre-registrations with outcomes), [RESULTS.md](RESULTS.md)
+(every run with provenance), `redteam/` (the scripts that broke our own
+headline). Every number traces to a committed artifact.
 
 ## Fresh Runpod / Vast.ai setup
 
@@ -129,30 +126,12 @@ verify 10 random examples by hand:
 
 ## Interpreting the result
 
-The floor is the distribution of the **max-across-layers** AUC under shuffled
-train labels (500 seeds) — we report the best of 3 layers, so the floor must
-apply the same selection or it flatters the probe.
+See RESULTS.md — in particular Run 007 (why forced-answer was withdrawn and
+what the corrected Δ(k) is), Run 010 (honest probe protocol + length
+control), and Runs 008/009 (fixed-length cuts). The GO/MARGINAL/NO-GO line
+printed by `train_probe` was the Gate-1 plumbing check, not the scientific
+conclusion.
 
-- **GO:** best-layer AUC > the shuffled-label floor's p95.
-- **MARGINAL:** AUC above the floor mean but not its p95. With n_test this
-  small that is genuinely ambiguous — the printed line reports what fraction
-  of floor seeds the probe beats; a human decides (usually: regenerate with
-  more problems before calling it either way).
-- **NO-GO:** AUC at or below the floor mean → either infrastructure issue
-  or the effect doesn't reproduce at this scale; both paths are in the project
-  spec (`_bmad/memory/agent-tyler/mats-project-spec.md`).
-
-**Text-floor comparison (the real question).** `results.json.text_floor` is a
-logistic regression on just (prefix token count, a per-problem difficulty
-scalar: MATH-500's level, or prompt length where the dataset has none) — no GPU, no
-internals, same train/test problems as the probe. Beating shuffled noise only
-proves the pipeline works; Gate 1 is interesting to the extent the probe also
-clears this crude text-side predictor. If the probe cannot beat two scalars a
-spectator reads off the page, the "internals know early" story has no legs at
-this scale — which is itself a reportable outcome (the project's question is
-exactly how much of the probe's signal the text already gives away). The
-three serious text baselines (LLM judge, trained text classifier,
-forced-answer) remain deferred work.
 
 ## What is deliberately NOT here (deferred; do not add)
 
