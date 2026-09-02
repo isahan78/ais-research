@@ -1,0 +1,142 @@
+{
+ "source": "outputs/expansion/final_table.json",
+ "commitment_source": "original dataset (RESULTS.md), gold-free agreement",
+ "commitment": {
+  "10": 0.595,
+  "25": 0.685,
+  "50": 0.865,
+  "75": 0.927,
+  "90": 0.965
+ },
+ "kpct": {
+  "k1": {
+   "probe": 0.7002,
+   "tfidf": 0.7723,
+   "length_only": 0.613,
+   "forced_conf": 0.5997,
+   "delta": -0.0737,
+   "delta_ci": [
+    -0.15,
+    0.0
+   ],
+   "delta_excludes_0": false
+  },
+  "k10": {
+   "probe": 0.7675,
+   "tfidf": 0.8168,
+   "length_only": 0.652,
+   "forced_conf": 0.582,
+   "delta": -0.0489,
+   "delta_ci": [
+    -0.097,
+    -0.003
+   ],
+   "delta_excludes_0": true
+  },
+  "k25": {
+   "probe": 0.7579,
+   "tfidf": 0.8282,
+   "length_only": 0.6445,
+   "forced_conf": 0.6234,
+   "delta": -0.0682,
+   "delta_ci": [
+    -0.12,
+    -0.021
+   ],
+   "delta_excludes_0": true
+  },
+  "k50": {
+   "probe": 0.7615,
+   "tfidf": 0.8409,
+   "length_only": 0.6378,
+   "forced_conf": 0.754,
+   "delta": -0.0784,
+   "delta_ci": [
+    -0.12,
+    -0.039
+   ],
+   "delta_excludes_0": true
+  },
+  "k75": {
+   "probe": 0.7636,
+   "tfidf": 0.8516,
+   "length_only": 0.6332,
+   "forced_conf": 0.8463,
+   "delta": -0.0876,
+   "delta_ci": [
+    -0.138,
+    -0.038
+   ],
+   "delta_excludes_0": true
+  },
+  "k90": {
+   "probe": 0.7813,
+   "tfidf": 0.8551,
+   "length_only": 0.6321,
+   "forced_conf": 0.8469,
+   "delta": -0.0741,
+   "delta_ci": [
+    -0.118,
+    -0.03
+   ],
+   "delta_excludes_0": true
+  }
+ },
+ "abs": {
+  "abs64": {
+   "probe": 0.6713,
+   "tfidf": 0.7426,
+   "length_only": 0.4759,
+   "delta": -0.0717,
+   "delta_ci": [
+    -0.141,
+    -0.008
+   ],
+   "delta_excludes_0": true
+  },
+  "abs128": {
+   "probe": 0.7326,
+   "tfidf": 0.7445,
+   "length_only": 0.4759,
+   "delta": -0.0116,
+   "delta_ci": [
+    -0.06,
+    0.037
+   ],
+   "delta_excludes_0": false
+  },
+  "abs256": {
+   "probe": 0.6979,
+   "tfidf": 0.7526,
+   "length_only": 0.4759,
+   "delta": -0.0564,
+   "delta_ci": [
+    -0.112,
+    0.002
+   ],
+   "delta_excludes_0": false
+  },
+  "abs512": {
+   "probe": 0.7403,
+   "tfidf": 0.7644,
+   "length_only": 0.4759,
+   "delta": -0.0241,
+   "delta_ci": [
+    -0.061,
+    0.015
+   ],
+   "delta_excludes_0": false
+  },
+  "abs1024": {
+   "probe": 0.7304,
+   "tfidf": 0.7705,
+   "length_only": 0.4759,
+   "delta": -0.0405,
+   "delta_ci": [
+    -0.086,
+    0.003
+   ],
+   "delta_excludes_0": false
+  }
+ }
+}
