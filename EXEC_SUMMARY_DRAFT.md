@@ -10,8 +10,9 @@
 **Summary.** Several recent papers report that a linear probe on a reasoning
 model's activations can predict its final outcome early in the chain of
 thought: [Can We Predict Alignment Before Models Finish Thinking?](https://arxiv.org/abs/2507.12428)
-(probes predict response alignment from early CoT activations, reportedly
-beating text classifiers by ~13 F1), [Temporal Predictors of Outcome in
+(probes on early CoT activations predict whether the final response will be
+safe or unsafe, beating the best text-based baselines — including capable
+LLMs and fine-tuned classifiers — by an average of 13 F1), [Temporal Predictors of Outcome in
 Reasoning Language Models](https://arxiv.org/abs/2511.14773) ("eventual
 correctness is highly predictable after only a few tokens"), and
 [No Answer Needed](https://arxiv.org/abs/2509.10625) (question-only probes
