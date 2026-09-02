@@ -300,3 +300,42 @@ Reused the 300 Block-2 traces (no generation cost). Population fixed once: trace
 
 ### Assessment
 Data collection for this project is now closed. Final tally: the k%-truncation protocol used by the audited literature leaks eventual trace length; under a leak-free protocol the strongest text reader loses most of its advantage and the probe-vs-text question becomes genuinely open at this sample size — an honest "unresolved, here is exactly what it would take to resolve it" (≈4× the negatives).
+
+---
+
+## Run 011 — FINAL, at full power: 1,000 traces, all 35 layers
+**2026-09-02 · overnight pod (RTX 4090, terminated & verified) + local honest refit · ~$5 session, ~$11 project · `compute_final_table.py`, `final_table.json`**
+
+Motivated by an external review. Three upgrades over Runs 005–009: **1,000 traces (213 negatives, was 52)**, **all 35 layers harvested (was 3)**, and **layer+C chosen by CV inside the training split** (Run 010 protocol) rather than on test.
+
+### k% grid (n_test=337, 77 negatives)
+
+| k | probe (layer) | tuned TF-IDF | forced-conf | length-only | Δ = probe − best text | CI excl 0 |
+|---:|---:|---:|---:|---:|---:|:--:|
+| 10 | 0.768 (L34) | **0.817** | 0.582 | 0.652 | −0.049 [−0.097,−0.003] | **yes** |
+| 25 | 0.758 (L33) | **0.828** | 0.623 | 0.645 | −0.068 [−0.120,−0.021] | **yes** |
+| 50 | 0.762 (L34) | **0.841** | 0.754 | 0.638 | −0.078 [−0.120,−0.039] | **yes** |
+| 75 | 0.764 (L26) | **0.852** | 0.846 | 0.633 | −0.088 [−0.138,−0.038] | **yes** |
+| 90 | 0.781 (L22) | **0.855** | 0.847 | 0.632 | −0.074 [−0.118,−0.030] | **yes** |
+
+### Fixed-length grid (n_test=274, 69 negatives)
+
+| N | probe | TF-IDF | forced-conf | length-only | Δ | CI excl 0 |
+|---:|---:|---:|---:|---:|---:|:--:|
+| 64 | 0.671 | 0.743 | 0.487 | 0.476 | −0.072 [−0.141,−0.008] | **yes** |
+| 128 | 0.733 | 0.745 | 0.477 | 0.476 | −0.012 [−0.060,+0.037] | no |
+| 256 | 0.698 | 0.753 | 0.470 | 0.476 | −0.056 [−0.112,+0.002] | no |
+| 512 | 0.740 | 0.764 | 0.529 | 0.476 | −0.024 [−0.061,+0.015] | no |
+| 1024 | 0.730 | 0.771 | 0.598 | 0.476 | −0.041 [−0.086,+0.003] | no |
+
+### The three answers
+
+1. **Does the probe ever beat the best text reader?** **No.** Δ negative at all 11 cuts; on the k% grid all five CIs exclude zero. More data made the negative result *more* confident, not less.
+2. **Does TF-IDF still collapse under fixed-length cuts?** **Partially, and less than at n=16.** It falls from ~0.85 (k%) to ~0.74–0.77 (fixed-length) — real, but the earlier 0.56–0.65 collapse was substantially small-n noise. Fixed-length Δ is mostly indistinguishable from zero: **probe and text are comparable once the length leak is removed, both ~0.7–0.77.**
+3. **Pre-registration III: WRONG (third sealed miss).** Predicted probe ~unchanged (rose to ~0.77), fixed-length Δ at N=64 ≈ +0.04 (was −0.07), TF-IDF ≈ 0.60 (was 0.74). Directionally wrong that fixed-length cuts would rescue the probe. Track record on sealed forecasts: 0/3. That the predictions were sealed in git before each dataset existed is what makes the record trustworthy.
+
+### What is now the honest headline
+On the standard k% protocol at full power, a **tuned bag-of-words reader of the trace text significantly beats a linear probe on activations** at predicting final correctness, at every cut (Δ −0.05 to −0.09, CIs exclude zero). The probe was *understated* in earlier runs (test-side layer selection + only 3 layers); with honest CV over 35 layers it rises to ~0.76–0.78 but still loses to text. **The length leak is real but is not the whole story** — even under leak-free fixed-length cuts, text edges the probe or ties it; the probe never wins. Forced-confidence (gold-free) is weak early (~0.5) and only becomes competitive very late (~0.85 at k≥75), consistent with the commitment curve: it only knows once the model has effectively decided.
+
+### Process (stated plainly)
+The result files (traces, 35-layer activations, confidence generations) were computed on the pod and verified on-disk before teardown. The final table cost four buggy analysis passes to get right: a stalled sub-agent (waited on jobs it could not receive), a heredoc written to a stale directory, a wrong confidence field name, and `GroupShuffleSplit` returning index arrays so a printed `n_test` read 166,672 — each caught and fixed, none affecting the committed AUCs (verified by reproduction). No result was reported from code with a known error still in it.
