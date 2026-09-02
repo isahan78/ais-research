@@ -1,4 +1,4 @@
-# Form answers — DRAFT v1 (Tyler, 2026-08-31)
+# Form answers — DRAFT v2 (voice pass: clear, direct, humble — 2026-09-01)
 
 > Status: draft for the owner to rewrite in their own voice. Every number
 > traces to RESULTS.md. Qs 9–12 are OWNER-ONLY and contain structure, not
@@ -50,10 +50,9 @@ Calibrated to what n=289 (52 negatives) supports:
 4. **The model commits to its answer long before it stops reasoning**:
    forcing an answer mid-trace matches the eventual answer 59% at 10% of
    thinking, 97% at 90% — measured with no gold labels.
-5. A meta-conclusion I did not plan: **my own most exciting result was
-   false.** A "forced-answer" baseline reaching 0.96 AUC turned out to be
-   scoring against the answer key (see Q6). The corrected numbers above are
-   what survived my own red-team.
+5. My most exciting result was wrong. A "forced-answer" baseline reached
+   0.96 AUC, but its score was computed against the answer key (see Q6).
+   The numbers above are the ones that survived the review that caught it.
 
 ## Q5. Technical setup
 
@@ -81,33 +80,33 @@ Calibrated to what n=289 (52 negatives) supports:
 
 ## Q6. Strongest evidence AGAINST these hypotheses
 
-Three of my own results were killed or reversed, and they are the strongest
-evidence in the project:
+The strongest evidence against my hypotheses came from my own results
+failing review. Three cases:
 
-1. **My headline was false.** The forced-answer baseline ("interrupt the
-   model, make it commit") reached 0.96 AUC and beat everything. An
-   adversarial review I ran against my own pipeline proved its score was
-   computed as grade(forced answer, GOLD): whenever the interrupted answer
-   equalled the final answer, score ≡ label *by construction* (97% of rows
-   at k=90). On the remaining rows its AUC was 0.000. The apparent "Δ widens
-   with k" finding was the copy rate approaching 1. I withdrew it; no
-   deployable monitor could compute it.
+1. My headline result was false. The forced-answer baseline (interrupt the
+   model, make it commit) reached 0.96 AUC and beat everything. An
+   adversarial review of my own pipeline showed its score was computed
+   against the gold answer: whenever the interrupted answer equalled the
+   final answer, the score equalled the label by construction (97% of rows
+   at k=90). On the remaining rows its AUC was 0.000. The apparent
+   "gap widens with k" finding was just the copy rate approaching 1. I
+   withdrew it. No deployed monitor could compute this score.
 2. **Against the leak explanation:** the tuned TF-IDF's signal is nearly
    orthogonal to length (partial r ≈ 0.43 controlling for log length), so
    "the text reader is just a length detector" — my own first interpretation
-   — was wrong, and is corrected in the record.
+   — was wrong. I corrected it in the record.
 3. **Against the probe:** at the k=1 control the probe scores 0.62 and does
    not clear the noise floor — but a probe on the *question alone* in prior
    work does predict correctness, so I checked; here the confound was absent.
-   Conversely the frontier judge scored 0.959 at k=25 but 0.876 at k=1 with
-   no reasoning to read — it is a difficulty oracle (it likely knows this
-   public benchmark), so I excluded it from the headline rather than pool
-   the most flattering number.
+   The frontier judge scored 0.959 at k=25 but 0.876 at k=1, where there is
+   almost no reasoning to read. It mostly knows this public benchmark, so I
+   reported it separately rather than pool the most flattering number.
 
-Both my pre-registered forecasts were also wrong in part: I predicted Δ ≈
-+0.10 at k=50 (measured: −0.10 region), then doubted my second forecast on
-evidence that turned out not to transfer across populations. All of this is
-timestamped in the repo.
+Both of my pre-registered predictions were also partly wrong. I predicted
+Δ ≈ +0.10 at k=50; it came in around −0.10. I then doubted my second
+prediction based on evidence that turned out not to transfer across
+populations, and that prediction held up. All of this is timestamped in
+the repo.
 
 ## Q7. Biggest limitations — and could I have addressed them?
 
@@ -143,12 +142,13 @@ facts, from the project record:]
   (a) 439 CPU-only tests, runnable without GPU/network, enforcing the
   invariants whose silent failure would fabricate results (split-by-problem,
   truncation boundaries, AUC orientation);
-  (b) **mutation testing** — deliberately breaking the floor computation,
-  the layer indexing, and the verdict logic and confirming the suite fails
-  (an earlier suite passed all three mutations, so it was rebuilt);
-  (c) an **adversarial red-team pass by separate agent instances with
-  instructions to break the result — which they did** (Q6.1), the single
-  most valuable step in the project;
+  (b) mutation testing: I deliberately broke the floor computation, the
+  layer indexing, and the verdict logic, and checked that the test suite
+  fails. An earlier version of the suite passed all three mutations, which
+  meant it was not testing the decision logic at all, so it was rebuilt.
+  (c) an adversarial review by separate agent instances instructed to break
+  the result. They did (Q6.1). This was the most valuable step in the
+  project.
   (d) hand-verification: randomly sampled traces, prefixes and forced
   answers read by eye at every stage; grader spot-checked against 40 traces.
 - **What I checked vs didn't:** every reported number traces to a committed
