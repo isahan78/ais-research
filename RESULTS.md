@@ -339,3 +339,80 @@ On the standard k% protocol at full power, a **tuned bag-of-words reader of the 
 
 ### Process (stated plainly)
 The result files (traces, 35-layer activations, confidence generations) were computed on the pod and verified on-disk before teardown. The final table cost four buggy analysis passes to get right: a stalled sub-agent (waited on jobs it could not receive), a heredoc written to a stale directory, a wrong confidence field name, and `GroupShuffleSplit` returning index arrays so a printed `n_test` read 166,672 — each caught and fixed, none affecting the committed AUCs (verified by reproduction). No result was reported from code with a known error still in it.
+
+---
+
+## Run 012 — cross-fit, budget-matched, population-controlled (answers external review #2)
+**2026-09-02 · local CPU, no new GPU · `cross_fit.py`, `cross_fit.json`**
+
+Three upgrades over Run 011, each targeting a specific reviewer objection:
+
+1. **Budget-matched probe.** The text baseline is ONE fixed TF-IDF config, so
+   the fair probe is also one config: a single layer fixed a priori (layer 27,
+   the deepest of the pre-registered 9/18/27 set — never tuned per cut), with
+   only C chosen by inner CV. This neutralises the "probe advantage is search
+   budget" critique — the +0.09 the probe gained in Run 011 came from a 35-layer
+   search the text side never got. Δ is now probe − TF-IDF, no per-cut max on
+   the text side (removes the uncorrected selection that biased toward our
+   conclusion). The generous best-of-35 probe (Run 011) is kept as a labelled
+   upper bound.
+2. **Cross-fit.** Out-of-fold predictions over EVERY trace (StratifiedGroupKFold,
+   5 folds), so all 213 negatives (k%) / 196 (fixed-length) are test data once,
+   instead of 77 / 69 in a single split. Pooled AUC and mean-per-fold AUC agree
+   throughout. Δ CI = cluster bootstrap over problems on pooled OOF preds.
+3. **Population control.** The k% grid re-run on the SAME 781 long-trace
+   population used for fixed-length, so k%-vs-fixed differs only in cut geometry.
+
+### Headline (cross-fit, budget-matched)
+
+| cut | probe (L27) | TF-IDF | length-only | Δ = probe−TFIDF | CI |
+|---|---|---|---|---|---|
+| k1  | 0.688 | 0.744 | 0.556 | −0.057 | [−0.098, −0.018] |
+| k10 | 0.711 | 0.788 | 0.607 | −0.077 | [−0.107, −0.047] |
+| k25 | 0.703 | 0.793 | 0.610 | −0.089 | [−0.124, −0.057] |
+| k50 | 0.755 | 0.805 | 0.610 | −0.050 | [−0.078, −0.022] |
+| k75 | 0.739 | 0.814 | 0.609 | −0.076 | [−0.107, −0.047] |
+| k90 | 0.757 | 0.819 | 0.609 | −0.062 | [−0.090, −0.034] |
+| abs64 | 0.669 | 0.748 | 0.518 | −0.079 | [−0.121, −0.037] |
+| abs128 | 0.705 | 0.758 | 0.518 | −0.052 | [−0.087, −0.017] |
+| abs256 | 0.724 | 0.762 | 0.520 | −0.038 | [−0.071, −0.006] |
+| abs512 | 0.711 | 0.770 | 0.521 | −0.059 | [−0.087, −0.030] |
+| abs1024 | 0.701 | 0.781 | 0.521 | −0.081 | [−0.111, −0.053] |
+
+**All 11 CIs exclude zero.** More power + a fair budget did not rescue the probe
+— it made the loss universal and significant, including the fixed-length cuts
+that were unresolved in Run 011.
+
+### Population control (k% AND fixed-length on the same 781 traces)
+
+- **length-only:** k% 0.542–0.566 vs fixed-length 0.518–0.521. The leak is worth
+  **+0.038 AUC** to a pure length reader, and vanishes to chance (~0.52) once
+  removed. Real, small, and — critically — unusable by any online monitor
+  (it needs the trace's eventual length).
+- **TF-IDF:** k% 0.784 vs fixed-length 0.764 on the SAME population — a −0.021
+  change. So removing the leak costs the text reader almost nothing.
+- **The Run 011 "text collapse under fixed-length" (0.85→0.75) was a POPULATION
+  artifact, not the leak.** Full-961 k% TF-IDF 0.794 vs long-781 k% 0.784; the
+  drop to ~0.76 came from restricting to long (harder) traces, not from the cut
+  geometry. Corrected.
+- All 11 population-control Δ also exclude zero.
+
+### The three answers, now settled
+1. **Does the probe ever beat the best text reader?** No — 22/22 comparisons,
+   every CI excludes zero, under a budget matched to the text side.
+2. **Does removing the length leak change the verdict?** No. The leak is real
+   but small (+0.038 to a length reader) and does not preferentially flatter
+   text; the case for fixed-length cuts is REALIZABILITY (a monitor cannot
+   compute fixed-k% length — the same defect that killed our forced-answer
+   baseline), not effect size.
+3. **Was the earlier fixed-length "collapse" real?** No — population + small-n
+   artifact. Owned in the record.
+
+### Framing added
+Activations at the cut are a deterministic function of the prefix tokens, so the
+probe cannot hold more information about the label than an ideal reader of the
+text; Δ ≤ 0 is the information-theoretic default, and the live question is
+whether internals make the label more *linearly accessible*. Here they do not.
+The probe reads the LAST prefix token (not a mean-pool), so it carries no length
+channel of its own. Generation was sampled (temp 0.6), so each trace is one
+stochastic draw.

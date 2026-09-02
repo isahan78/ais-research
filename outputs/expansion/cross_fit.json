@@ -1,0 +1,1062 @@
+{
+ "headline": {
+  "k1": {
+   "tag": "k1",
+   "n": 961,
+   "n_neg": 213,
+   "probe": 0.688,
+   "probe_perfold": [
+    0.7016,
+    0.0343
+   ],
+   "probe_picks": [
+    [
+     27,
+     0.001
+    ],
+    [
+     27,
+     0.0001
+    ],
+    [
+     27,
+     0.001
+    ],
+    [
+     27,
+     0.001
+    ],
+    [
+     27,
+     0.0001
+    ]
+   ],
+   "tfidf": 0.7441,
+   "tfidf_perfold": [
+    0.7483,
+    0.027
+   ],
+   "length_only": 0.5563,
+   "forced_conf": 0.5945,
+   "delta_probe_minus_tfidf": -0.0568,
+   "delta_ci": [
+    -0.098,
+    -0.018
+   ],
+   "delta_excludes_0": true,
+   "probe_layer_fixed": 27,
+   "probe_budget": "1 layer fixed a priori; C by inner CV",
+   "text_budget": "1 TF-IDF config fixed a priori"
+  },
+  "k10": {
+   "tag": "k10",
+   "n": 961,
+   "n_neg": 213,
+   "probe": 0.7114,
+   "probe_perfold": [
+    0.7316,
+    0.0444
+   ],
+   "probe_picks": [
+    [
+     27,
+     1e-05
+    ],
+    [
+     27,
+     1e-05
+    ],
+    [
+     27,
+     1e-05
+    ],
+    [
+     27,
+     1e-05
+    ],
+    [
+     27,
+     0.0001
+    ]
+   ],
+   "tfidf": 0.7884,
+   "tfidf_perfold": [
+    0.7915,
+    0.0303
+   ],
+   "length_only": 0.6073,
+   "forced_conf": 0.5847,
+   "delta_probe_minus_tfidf": -0.0771,
+   "delta_ci": [
+    -0.107,
+    -0.047
+   ],
+   "delta_excludes_0": true,
+   "probe_layer_fixed": 27,
+   "probe_budget": "1 layer fixed a priori; C by inner CV",
+   "text_budget": "1 TF-IDF config fixed a priori"
+  },
+  "k25": {
+   "tag": "k25",
+   "n": 961,
+   "n_neg": 213,
+   "probe": 0.7034,
+   "probe_perfold": [
+    0.724,
+    0.0321
+   ],
+   "probe_picks": [
+    [
+     27,
+     1e-05
+    ],
+    [
+     27,
+     0.0001
+    ],
+    [
+     27,
+     1e-05
+    ],
+    [
+     27,
+     0.0001
+    ],
+    [
+     27,
+     0.0001
+    ]
+   ],
+   "tfidf": 0.7925,
+   "tfidf_perfold": [
+    0.7968,
+    0.033
+   ],
+   "length_only": 0.6102,
+   "forced_conf": 0.6388,
+   "delta_probe_minus_tfidf": -0.0894,
+   "delta_ci": [
+    -0.124,
+    -0.057
+   ],
+   "delta_excludes_0": true,
+   "probe_layer_fixed": 27,
+   "probe_budget": "1 layer fixed a priori; C by inner CV",
+   "text_budget": "1 TF-IDF config fixed a priori"
+  },
+  "k50": {
+   "tag": "k50",
+   "n": 961,
+   "n_neg": 213,
+   "probe": 0.7546,
+   "probe_perfold": [
+    0.7561,
+    0.0411
+   ],
+   "probe_picks": [
+    [
+     27,
+     0.0001
+    ],
+    [
+     27,
+     0.0001
+    ],
+    [
+     27,
+     0.0001
+    ],
+    [
+     27,
+     0.0001
+    ],
+    [
+     27,
+     0.0001
+    ]
+   ],
+   "tfidf": 0.8051,
+   "tfidf_perfold": [
+    0.8076,
+    0.0333
+   ],
+   "length_only": 0.6103,
+   "forced_conf": 0.759,
+   "delta_probe_minus_tfidf": -0.0502,
+   "delta_ci": [
+    -0.078,
+    -0.022
+   ],
+   "delta_excludes_0": true,
+   "probe_layer_fixed": 27,
+   "probe_budget": "1 layer fixed a priori; C by inner CV",
+   "text_budget": "1 TF-IDF config fixed a priori"
+  },
+  "k75": {
+   "tag": "k75",
+   "n": 961,
+   "n_neg": 213,
+   "probe": 0.7385,
+   "probe_perfold": [
+    0.7534,
+    0.0492
+   ],
+   "probe_picks": [
+    [
+     27,
+     0.0001
+    ],
+    [
+     27,
+     0.0001
+    ],
+    [
+     27,
+     0.001
+    ],
+    [
+     27,
+     0.0001
+    ],
+    [
+     27,
+     0.0001
+    ]
+   ],
+   "tfidf": 0.8141,
+   "tfidf_perfold": [
+    0.8155,
+    0.0374
+   ],
+   "length_only": 0.6094,
+   "forced_conf": 0.8186,
+   "delta_probe_minus_tfidf": -0.076,
+   "delta_ci": [
+    -0.107,
+    -0.047
+   ],
+   "delta_excludes_0": true,
+   "probe_layer_fixed": 27,
+   "probe_budget": "1 layer fixed a priori; C by inner CV",
+   "text_budget": "1 TF-IDF config fixed a priori"
+  },
+  "k90": {
+   "tag": "k90",
+   "n": 961,
+   "n_neg": 213,
+   "probe": 0.757,
+   "probe_perfold": [
+    0.762,
+    0.0305
+   ],
+   "probe_picks": [
+    [
+     27,
+     0.0001
+    ],
+    [
+     27,
+     0.0001
+    ],
+    [
+     27,
+     0.0001
+    ],
+    [
+     27,
+     1e-05
+    ],
+    [
+     27,
+     0.0001
+    ]
+   ],
+   "tfidf": 0.8192,
+   "tfidf_perfold": [
+    0.8211,
+    0.0387
+   ],
+   "length_only": 0.6094,
+   "forced_conf": 0.819,
+   "delta_probe_minus_tfidf": -0.0623,
+   "delta_ci": [
+    -0.09,
+    -0.034
+   ],
+   "delta_excludes_0": true,
+   "probe_layer_fixed": 27,
+   "probe_budget": "1 layer fixed a priori; C by inner CV",
+   "text_budget": "1 TF-IDF config fixed a priori"
+  },
+  "abs64": {
+   "tag": "abs64",
+   "n": 781,
+   "n_neg": 196,
+   "probe": 0.6685,
+   "probe_perfold": [
+    0.6953,
+    0.0337
+   ],
+   "probe_picks": [
+    [
+     27,
+     0.0001
+    ],
+    [
+     27,
+     0.001
+    ],
+    [
+     27,
+     1e-05
+    ],
+    [
+     27,
+     0.001
+    ],
+    [
+     27,
+     1e-05
+    ]
+   ],
+   "tfidf": 0.7475,
+   "tfidf_perfold": [
+    0.7453,
+    0.0367
+   ],
+   "length_only": 0.5177,
+   "forced_conf": 0.522,
+   "delta_probe_minus_tfidf": -0.079,
+   "delta_ci": [
+    -0.121,
+    -0.037
+   ],
+   "delta_excludes_0": true,
+   "probe_layer_fixed": 27,
+   "probe_budget": "1 layer fixed a priori; C by inner CV",
+   "text_budget": "1 TF-IDF config fixed a priori"
+  },
+  "abs128": {
+   "tag": "abs128",
+   "n": 781,
+   "n_neg": 196,
+   "probe": 0.7054,
+   "probe_perfold": [
+    0.7247,
+    0.0514
+   ],
+   "probe_picks": [
+    [
+     27,
+     1e-05
+    ],
+    [
+     27,
+     1e-05
+    ],
+    [
+     27,
+     0.0001
+    ],
+    [
+     27,
+     1e-05
+    ],
+    [
+     27,
+     0.0001
+    ]
+   ],
+   "tfidf": 0.7576,
+   "tfidf_perfold": [
+    0.7554,
+    0.0421
+   ],
+   "length_only": 0.5184,
+   "forced_conf": 0.5085,
+   "delta_probe_minus_tfidf": -0.0523,
+   "delta_ci": [
+    -0.087,
+    -0.017
+   ],
+   "delta_excludes_0": true,
+   "probe_layer_fixed": 27,
+   "probe_budget": "1 layer fixed a priori; C by inner CV",
+   "text_budget": "1 TF-IDF config fixed a priori"
+  },
+  "abs256": {
+   "tag": "abs256",
+   "n": 781,
+   "n_neg": 196,
+   "probe": 0.7241,
+   "probe_perfold": [
+    0.7259,
+    0.0462
+   ],
+   "probe_picks": [
+    [
+     27,
+     1e-05
+    ],
+    [
+     27,
+     0.0001
+    ],
+    [
+     27,
+     1e-05
+    ],
+    [
+     27,
+     0.0001
+    ],
+    [
+     27,
+     1e-05
+    ]
+   ],
+   "tfidf": 0.7619,
+   "tfidf_perfold": [
+    0.762,
+    0.0428
+   ],
+   "length_only": 0.5196,
+   "forced_conf": 0.5183,
+   "delta_probe_minus_tfidf": -0.0378,
+   "delta_ci": [
+    -0.071,
+    -0.006
+   ],
+   "delta_excludes_0": true,
+   "probe_layer_fixed": 27,
+   "probe_budget": "1 layer fixed a priori; C by inner CV",
+   "text_budget": "1 TF-IDF config fixed a priori"
+  },
+  "abs512": {
+   "tag": "abs512",
+   "n": 781,
+   "n_neg": 196,
+   "probe": 0.711,
+   "probe_perfold": [
+    0.7228,
+    0.0315
+   ],
+   "probe_picks": [
+    [
+     27,
+     1e-05
+    ],
+    [
+     27,
+     1e-05
+    ],
+    [
+     27,
+     0.0001
+    ],
+    [
+     27,
+     1e-05
+    ],
+    [
+     27,
+     1e-05
+    ]
+   ],
+   "tfidf": 0.7696,
+   "tfidf_perfold": [
+    0.7683,
+    0.039
+   ],
+   "length_only": 0.5205,
+   "forced_conf": 0.5778,
+   "delta_probe_minus_tfidf": -0.0587,
+   "delta_ci": [
+    -0.087,
+    -0.03
+   ],
+   "delta_excludes_0": true,
+   "probe_layer_fixed": 27,
+   "probe_budget": "1 layer fixed a priori; C by inner CV",
+   "text_budget": "1 TF-IDF config fixed a priori"
+  },
+  "abs1024": {
+   "tag": "abs1024",
+   "n": 781,
+   "n_neg": 196,
+   "probe": 0.7006,
+   "probe_perfold": [
+    0.7084,
+    0.0409
+   ],
+   "probe_picks": [
+    [
+     27,
+     1e-05
+    ],
+    [
+     27,
+     1e-05
+    ],
+    [
+     27,
+     0.0001
+    ],
+    [
+     27,
+     0.0001
+    ],
+    [
+     27,
+     1e-05
+    ]
+   ],
+   "tfidf": 0.7811,
+   "tfidf_perfold": [
+    0.7814,
+    0.0355
+   ],
+   "length_only": 0.5211,
+   "forced_conf": 0.6378,
+   "delta_probe_minus_tfidf": -0.0814,
+   "delta_ci": [
+    -0.111,
+    -0.053
+   ],
+   "delta_excludes_0": true,
+   "probe_layer_fixed": 27,
+   "probe_budget": "1 layer fixed a priori; C by inner CV",
+   "text_budget": "1 TF-IDF config fixed a priori"
+  }
+ },
+ "pop_control": {
+  "k1": {
+   "tag": "k1",
+   "n": 781,
+   "n_neg": 196,
+   "probe": 0.6757,
+   "probe_perfold": [
+    0.6959,
+    0.053
+   ],
+   "probe_picks": [
+    [
+     27,
+     0.0001
+    ],
+    [
+     27,
+     0.0001
+    ],
+    [
+     27,
+     0.001
+    ],
+    [
+     27,
+     0.0001
+    ],
+    [
+     27,
+     0.0001
+    ]
+   ],
+   "tfidf": 0.7527,
+   "tfidf_perfold": [
+    0.7481,
+    0.0308
+   ],
+   "length_only": 0.5421,
+   "forced_conf": 0.5327,
+   "delta_probe_minus_tfidf": -0.0766,
+   "delta_ci": [
+    -0.118,
+    -0.035
+   ],
+   "delta_excludes_0": true,
+   "probe_layer_fixed": 27,
+   "probe_budget": "1 layer fixed a priori; C by inner CV",
+   "text_budget": "1 TF-IDF config fixed a priori"
+  },
+  "k10": {
+   "tag": "k10",
+   "n": 781,
+   "n_neg": 196,
+   "probe": 0.6999,
+   "probe_perfold": [
+    0.7299,
+    0.0551
+   ],
+   "probe_picks": [
+    [
+     27,
+     1e-05
+    ],
+    [
+     27,
+     1e-05
+    ],
+    [
+     27,
+     0.0001
+    ],
+    [
+     27,
+     0.0001
+    ],
+    [
+     27,
+     1e-05
+    ]
+   ],
+   "tfidf": 0.7812,
+   "tfidf_perfold": [
+    0.7809,
+    0.0478
+   ],
+   "length_only": 0.5663,
+   "forced_conf": 0.5182,
+   "delta_probe_minus_tfidf": -0.0815,
+   "delta_ci": [
+    -0.112,
+    -0.053
+   ],
+   "delta_excludes_0": true,
+   "probe_layer_fixed": 27,
+   "probe_budget": "1 layer fixed a priori; C by inner CV",
+   "text_budget": "1 TF-IDF config fixed a priori"
+  },
+  "k25": {
+   "tag": "k25",
+   "n": 781,
+   "n_neg": 196,
+   "probe": 0.7005,
+   "probe_perfold": [
+    0.715,
+    0.0445
+   ],
+   "probe_picks": [
+    [
+     27,
+     1e-05
+    ],
+    [
+     27,
+     0.0001
+    ],
+    [
+     27,
+     1e-05
+    ],
+    [
+     27,
+     1e-05
+    ],
+    [
+     27,
+     0.0001
+    ]
+   ],
+   "tfidf": 0.7808,
+   "tfidf_perfold": [
+    0.7804,
+    0.0344
+   ],
+   "length_only": 0.5633,
+   "forced_conf": 0.5975,
+   "delta_probe_minus_tfidf": -0.0801,
+   "delta_ci": [
+    -0.113,
+    -0.049
+   ],
+   "delta_excludes_0": true,
+   "probe_layer_fixed": 27,
+   "probe_budget": "1 layer fixed a priori; C by inner CV",
+   "text_budget": "1 TF-IDF config fixed a priori"
+  },
+  "k50": {
+   "tag": "k50",
+   "n": 781,
+   "n_neg": 196,
+   "probe": 0.7396,
+   "probe_perfold": [
+    0.7421,
+    0.028
+   ],
+   "probe_picks": [
+    [
+     27,
+     0.0001
+    ],
+    [
+     27,
+     0.0001
+    ],
+    [
+     27,
+     0.0001
+    ],
+    [
+     27,
+     0.0001
+    ],
+    [
+     27,
+     0.0001
+    ]
+   ],
+   "tfidf": 0.7889,
+   "tfidf_perfold": [
+    0.7888,
+    0.0328
+   ],
+   "length_only": 0.559,
+   "forced_conf": 0.7398,
+   "delta_probe_minus_tfidf": -0.0487,
+   "delta_ci": [
+    -0.076,
+    -0.021
+   ],
+   "delta_excludes_0": true,
+   "probe_layer_fixed": 27,
+   "probe_budget": "1 layer fixed a priori; C by inner CV",
+   "text_budget": "1 TF-IDF config fixed a priori"
+  },
+  "k75": {
+   "tag": "k75",
+   "n": 781,
+   "n_neg": 196,
+   "probe": 0.7185,
+   "probe_perfold": [
+    0.7314,
+    0.038
+   ],
+   "probe_picks": [
+    [
+     27,
+     0.0001
+    ],
+    [
+     27,
+     0.0001
+    ],
+    [
+     27,
+     0.001
+    ],
+    [
+     27,
+     0.001
+    ],
+    [
+     27,
+     0.0001
+    ]
+   ],
+   "tfidf": 0.7983,
+   "tfidf_perfold": [
+    0.7978,
+    0.0347
+   ],
+   "length_only": 0.5572,
+   "forced_conf": 0.8014,
+   "delta_probe_minus_tfidf": -0.0802,
+   "delta_ci": [
+    -0.115,
+    -0.045
+   ],
+   "delta_excludes_0": true,
+   "probe_layer_fixed": 27,
+   "probe_budget": "1 layer fixed a priori; C by inner CV",
+   "text_budget": "1 TF-IDF config fixed a priori"
+  },
+  "k90": {
+   "tag": "k90",
+   "n": 781,
+   "n_neg": 196,
+   "probe": 0.7286,
+   "probe_perfold": [
+    0.731,
+    0.035
+   ],
+   "probe_picks": [
+    [
+     27,
+     0.0001
+    ],
+    [
+     27,
+     0.0001
+    ],
+    [
+     27,
+     0.0001
+    ],
+    [
+     27,
+     0.0001
+    ],
+    [
+     27,
+     0.0001
+    ]
+   ],
+   "tfidf": 0.8028,
+   "tfidf_perfold": [
+    0.8033,
+    0.0334
+   ],
+   "length_only": 0.5563,
+   "forced_conf": 0.7963,
+   "delta_probe_minus_tfidf": -0.0736,
+   "delta_ci": [
+    -0.102,
+    -0.045
+   ],
+   "delta_excludes_0": true,
+   "probe_layer_fixed": 27,
+   "probe_budget": "1 layer fixed a priori; C by inner CV",
+   "text_budget": "1 TF-IDF config fixed a priori"
+  },
+  "abs64": {
+   "tag": "abs64",
+   "n": 781,
+   "n_neg": 196,
+   "probe": 0.6685,
+   "probe_perfold": [
+    0.6953,
+    0.0337
+   ],
+   "probe_picks": [
+    [
+     27,
+     0.0001
+    ],
+    [
+     27,
+     0.001
+    ],
+    [
+     27,
+     1e-05
+    ],
+    [
+     27,
+     0.001
+    ],
+    [
+     27,
+     1e-05
+    ]
+   ],
+   "tfidf": 0.7475,
+   "tfidf_perfold": [
+    0.7453,
+    0.0367
+   ],
+   "length_only": 0.5177,
+   "forced_conf": 0.522,
+   "delta_probe_minus_tfidf": -0.0793,
+   "delta_ci": [
+    -0.12,
+    -0.039
+   ],
+   "delta_excludes_0": true,
+   "probe_layer_fixed": 27,
+   "probe_budget": "1 layer fixed a priori; C by inner CV",
+   "text_budget": "1 TF-IDF config fixed a priori"
+  },
+  "abs128": {
+   "tag": "abs128",
+   "n": 781,
+   "n_neg": 196,
+   "probe": 0.7054,
+   "probe_perfold": [
+    0.7247,
+    0.0514
+   ],
+   "probe_picks": [
+    [
+     27,
+     1e-05
+    ],
+    [
+     27,
+     1e-05
+    ],
+    [
+     27,
+     0.0001
+    ],
+    [
+     27,
+     1e-05
+    ],
+    [
+     27,
+     0.0001
+    ]
+   ],
+   "tfidf": 0.7576,
+   "tfidf_perfold": [
+    0.7554,
+    0.0421
+   ],
+   "length_only": 0.5184,
+   "forced_conf": 0.5085,
+   "delta_probe_minus_tfidf": -0.0516,
+   "delta_ci": [
+    -0.088,
+    -0.018
+   ],
+   "delta_excludes_0": true,
+   "probe_layer_fixed": 27,
+   "probe_budget": "1 layer fixed a priori; C by inner CV",
+   "text_budget": "1 TF-IDF config fixed a priori"
+  },
+  "abs256": {
+   "tag": "abs256",
+   "n": 781,
+   "n_neg": 196,
+   "probe": 0.7241,
+   "probe_perfold": [
+    0.7259,
+    0.0462
+   ],
+   "probe_picks": [
+    [
+     27,
+     1e-05
+    ],
+    [
+     27,
+     0.0001
+    ],
+    [
+     27,
+     1e-05
+    ],
+    [
+     27,
+     0.0001
+    ],
+    [
+     27,
+     1e-05
+    ]
+   ],
+   "tfidf": 0.7619,
+   "tfidf_perfold": [
+    0.762,
+    0.0428
+   ],
+   "length_only": 0.5196,
+   "forced_conf": 0.5183,
+   "delta_probe_minus_tfidf": -0.0366,
+   "delta_ci": [
+    -0.07,
+    -0.004
+   ],
+   "delta_excludes_0": true,
+   "probe_layer_fixed": 27,
+   "probe_budget": "1 layer fixed a priori; C by inner CV",
+   "text_budget": "1 TF-IDF config fixed a priori"
+  },
+  "abs512": {
+   "tag": "abs512",
+   "n": 781,
+   "n_neg": 196,
+   "probe": 0.711,
+   "probe_perfold": [
+    0.7228,
+    0.0315
+   ],
+   "probe_picks": [
+    [
+     27,
+     1e-05
+    ],
+    [
+     27,
+     1e-05
+    ],
+    [
+     27,
+     0.0001
+    ],
+    [
+     27,
+     1e-05
+    ],
+    [
+     27,
+     1e-05
+    ]
+   ],
+   "tfidf": 0.7696,
+   "tfidf_perfold": [
+    0.7683,
+    0.039
+   ],
+   "length_only": 0.5205,
+   "forced_conf": 0.5778,
+   "delta_probe_minus_tfidf": -0.0589,
+   "delta_ci": [
+    -0.089,
+    -0.03
+   ],
+   "delta_excludes_0": true,
+   "probe_layer_fixed": 27,
+   "probe_budget": "1 layer fixed a priori; C by inner CV",
+   "text_budget": "1 TF-IDF config fixed a priori"
+  },
+  "abs1024": {
+   "tag": "abs1024",
+   "n": 781,
+   "n_neg": 196,
+   "probe": 0.7006,
+   "probe_perfold": [
+    0.7084,
+    0.0409
+   ],
+   "probe_picks": [
+    [
+     27,
+     1e-05
+    ],
+    [
+     27,
+     1e-05
+    ],
+    [
+     27,
+     0.0001
+    ],
+    [
+     27,
+     0.0001
+    ],
+    [
+     27,
+     1e-05
+    ]
+   ],
+   "tfidf": 0.7811,
+   "tfidf_perfold": [
+    0.7814,
+    0.0355
+   ],
+   "length_only": 0.5211,
+   "forced_conf": 0.6378,
+   "delta_probe_minus_tfidf": -0.0808,
+   "delta_ci": [
+    -0.109,
+    -0.052
+   ],
+   "delta_excludes_0": true,
+   "probe_layer_fixed": 27,
+   "probe_budget": "1 layer fixed a priori; C by inner CV",
+   "text_budget": "1 TF-IDF config fixed a priori"
+  }
+ }
+}

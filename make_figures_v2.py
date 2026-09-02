@@ -1,11 +1,10 @@
-"""Figures for the final (Run 011) expanded dataset.
+"""Figures for Run 012 (cross-fit, budget-matched, population-controlled).
 
-Every number is read from the committed artifact
-outputs/expansion/final_table.json (produced by compute_final_table.py), except
-the commitment curve, which is the original-dataset behavioral measurement
-(forced mid-trace answer == final trace answer) stated in RESULTS.md; the
-expanded forced-answer generator hit a lower parse rate, so the commitment
-curve is reported on the original dataset.
+Reads the committed artifact outputs/expansion/cross_fit.json (from
+cross_fit.py). The commitment curve is the gold-free behavioural measurement
+(forced mid-trace answer == final answer) on the FULL 1,000-trace set, parsed
+from the forced-answer completions (the forcing template puts \\boxed{ in the
+prompt, so the completion is the letter itself).
 
 Outputs PNGs to outputs/expansion/figures/ and a figure_data.json audit dump.
 No GPU, no network. Run: python make_figures_v2.py
@@ -16,14 +15,15 @@ import os
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+import matplotlib.ticker as mticker
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-TABLE = os.path.join(HERE, "outputs", "expansion", "final_table.json")
+CF = os.path.join(HERE, "outputs", "expansion", "cross_fit.json")
 FIGDIR = os.path.join(HERE, "outputs", "expansion", "figures")
 os.makedirs(FIGDIR, exist_ok=True)
 
-# Commitment curve: original dataset, forced mid-trace answer == final answer.
-COMMITMENT = {10: 0.595, 25: 0.685, 50: 0.865, 75: 0.927, 90: 0.965}
+# Commitment: full 1,000-trace set, forced mid-trace answer == final answer.
+COMMITMENT = {1: 0.530, 10: 0.570, 25: 0.676, 50: 0.856, 75: 0.947, 90: 0.971}
 
 KPCT = ["k1", "k10", "k25", "k50", "k75", "k90"]
 KX = [1, 10, 25, 50, 75, 90]
@@ -37,45 +37,52 @@ CONF = "#2ca02c"
 
 
 def load():
-    with open(TABLE) as f:
+    with open(CF) as f:
         return json.load(f)
 
 
-def fig1_delta(d):
-    """Δ(probe − best text) vs k, with paired-bootstrap CIs, k% grid."""
-    fig, ax = plt.subplots(figsize=(7, 4.3))
-    ys = [d[k]["delta"] for k in KPCT]
-    lo = [d[k]["delta"] - d[k]["delta_ci"][0] for k in KPCT]
-    hi = [d[k]["delta_ci"][1] - d[k]["delta"] for k in KPCT]
+def fig1_delta(H):
+    """Δ(probe − TF-IDF) vs cut, cross-fit, all cuts (every CI excludes 0)."""
+    fig, ax = plt.subplots(figsize=(7.5, 4.3))
     ax.axhline(0, color="black", lw=1, ls="--", alpha=0.6)
-    ax.errorbar(KX, ys, yerr=[lo, hi], fmt="o-", color=PROBE, capsize=4, lw=2)
-    for k, x, y in zip(KPCT, KX, ys):
-        if d[k]["delta_excludes_0"]:
-            ax.annotate("*", (x, y), textcoords="offset points",
-                        xytext=(0, 9), ha="center", fontsize=15, color=PROBE)
-    ax.set_xlabel("cut point k (% of thinking tokens)")
-    ax.set_ylabel("Δ = AUC(probe) − AUC(best text reader)")
-    ax.set_title("Probe never beats text: Δ negative at every cut\n"
-                 "(* = 95% paired-bootstrap CI excludes 0; n_test=337, 77 neg)")
-    ax.set_xticks(KX)
+    # k% cuts
+    yk = [H[t]["delta_probe_minus_tfidf"] for t in KPCT]
+    lok = [H[t]["delta_probe_minus_tfidf"] - H[t]["delta_ci"][0] for t in KPCT]
+    hik = [H[t]["delta_ci"][1] - H[t]["delta_probe_minus_tfidf"] for t in KPCT]
+    ax.errorbar(range(6), yk, yerr=[lok, hik], fmt="o-", color=PROBE, capsize=4,
+                lw=2, label="k% cuts")
+    # fixed-length cuts
+    ya = [H[t]["delta_probe_minus_tfidf"] for t in ABS]
+    loa = [H[t]["delta_probe_minus_tfidf"] - H[t]["delta_ci"][0] for t in ABS]
+    hia = [H[t]["delta_ci"][1] - H[t]["delta_probe_minus_tfidf"] for t in ABS]
+    ax.errorbar(range(6, 11), ya, yerr=[loa, hia], fmt="s-", color="#ff7f0e",
+                capsize=4, lw=2, label="fixed-length cuts")
+    labels = ["k1", "k10", "k25", "k50", "k75", "k90",
+              "N64", "N128", "N256", "N512", "N1024"]
+    ax.set_xticks(range(11))
+    ax.set_xticklabels(labels, rotation=45, ha="right", fontsize=8)
+    ax.set_ylabel("Δ = AUC(probe) − AUC(TF-IDF)")
+    ax.set_title("Budget-matched probe never beats text: Δ<0 at all 11 cuts,\n"
+                 "every 95% CI excludes 0 (cross-fit, 213/196 negatives)")
+    ax.legend(loc="lower left", fontsize=9)
     fig.tight_layout()
     fig.savefig(os.path.join(FIGDIR, "fig1_delta.png"), dpi=200)
     plt.close(fig)
 
 
-def fig2_readers(d):
-    """Reader AUCs vs k, k% grid."""
+def fig2_readers(H):
+    """Reader AUCs vs k, cross-fit, k% grid."""
     fig, ax = plt.subplots(figsize=(7, 4.3))
-    ax.plot(KX, [d[k]["tfidf"] for k in KPCT], "o-", color=TEXT, lw=2, label="tuned TF-IDF (text)")
-    ax.plot(KX, [d[k]["probe"] for k in KPCT], "s-", color=PROBE, lw=2, label="linear probe (activations)")
-    ax.plot(KX, [d[k]["forced_conf"] for k in KPCT], "^-", color=CONF, lw=1.5, label="forced-confidence (gold-free)")
-    ax.plot(KX, [d[k]["length_only"] for k in KPCT], "d--", color=LEN, lw=1.5, label="length-only (the leak)")
+    ax.plot(KX, [H[t]["tfidf"] for t in KPCT], "o-", color=TEXT, lw=2, label="TF-IDF (text, 1 config)")
+    ax.plot(KX, [H[t]["probe"] for t in KPCT], "s-", color=PROBE, lw=2, label="probe (activations, 1 layer)")
+    ax.plot(KX, [H[t]["forced_conf"] for t in KPCT], "^-", color=CONF, lw=1.5, label="forced-confidence (gold-free)")
+    ax.plot(KX, [H[t]["length_only"] for t in KPCT], "d--", color=LEN, lw=1.5, label="length-only (the leak)")
     ax.axhline(0.5, color="black", lw=1, ls=":", alpha=0.5)
     ax.set_xlabel("cut point k (% of thinking tokens)")
-    ax.set_ylabel("held-out ROC-AUC")
-    ax.set_title("Text reader leads the probe at every cut (k% protocol)")
+    ax.set_ylabel("cross-fit ROC-AUC")
+    ax.set_title("Text leads the budget-matched probe at every cut (k% protocol)")
     ax.set_xticks(KX)
-    ax.set_ylim(0.45, 0.9)
+    ax.set_ylim(0.45, 0.88)
     ax.legend(loc="lower right", fontsize=9)
     fig.tight_layout()
     fig.savefig(os.path.join(FIGDIR, "fig2_readers.png"), dpi=200)
@@ -83,7 +90,6 @@ def fig2_readers(d):
 
 
 def fig3_commitment():
-    """Forced mid-trace answer agreement with final answer (original dataset)."""
     fig, ax = plt.subplots(figsize=(7, 4.3))
     xs = sorted(COMMITMENT)
     ax.plot(xs, [COMMITMENT[k] for k in xs], "o-", color="#9467bd", lw=2)
@@ -93,8 +99,8 @@ def fig3_commitment():
                     textcoords="offset points", xytext=(0, 8), ha="center", fontsize=9)
     ax.set_xlabel("cut point k (% of thinking tokens)")
     ax.set_ylabel("agreement: forced answer = final answer")
-    ax.set_title("The model commits early: by halfway the answer is usually set\n"
-                 "(gold-free, original dataset)")
+    ax.set_title("The model commits early: answer ~86% locked by halfway\n"
+                 "(gold-free, full 1,000-trace set)")
     ax.set_xticks(xs)
     ax.set_ylim(0.5, 1.02)
     fig.tight_layout()
@@ -102,52 +108,50 @@ def fig3_commitment():
     plt.close(fig)
 
 
-def fig4_protocol(d):
-    """k% vs fixed-length: probe and TF-IDF, side by side."""
-    fig, (a1, a2) = plt.subplots(1, 2, figsize=(11, 4.3), sharey=True)
-    # left: k% protocol (has the length leak)
-    a1.plot(KX, [d[k]["tfidf"] for k in KPCT], "o-", color=TEXT, lw=2, label="TF-IDF")
-    a1.plot(KX, [d[k]["probe"] for k in KPCT], "s-", color=PROBE, lw=2, label="probe")
-    a1.plot(KX, [d[k]["length_only"] for k in KPCT], "d--", color=LEN, lw=1.5, label="length-only")
-    a1.set_title("k% cuts (length leaks in)")
-    a1.set_xlabel("k (% of thinking)")
-    a1.set_ylabel("held-out ROC-AUC")
-    a1.set_xticks(KX)
-    a1.legend(loc="lower right", fontsize=9)
-    # right: fixed-length protocol (leak removed by construction)
-    a2.plot(AX, [d[k]["tfidf"] for k in ABS], "o-", color=TEXT, lw=2, label="TF-IDF")
-    a2.plot(AX, [d[k]["probe"] for k in ABS], "s-", color=PROBE, lw=2, label="probe")
-    a2.plot(AX, [d[k]["length_only"] for k in ABS], "d--", color=LEN, lw=1.5, label="length-only")
-    a2.set_title("fixed-length cuts (leak removed)")
-    a2.set_xlabel("N (thinking tokens kept)")
-    a2.set_xscale("log", base=2)
-    a2.set_xticks(AX)
-    a2.get_xaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
-    a2.legend(loc="lower right", fontsize=9)
-    for a in (a1, a2):
-        a.axhline(0.5, color="black", lw=1, ls=":", alpha=0.5)
-        a.set_ylim(0.45, 0.9)
-    fig.suptitle("Removing the length leak narrows text's lead to a near-tie — "
-                 "the probe still never wins", fontsize=11)
-    fig.tight_layout(rect=[0, 0, 1, 0.95])
-    fig.savefig(os.path.join(FIGDIR, "fig4_protocol_comparison.png"), dpi=200, bbox_inches="tight")
+def fig4_population_control(P):
+    """Same 781 traces, both protocols: the leak is small and text is stable."""
+    fig, ax = plt.subplots(figsize=(8, 4.6))
+    xk, xa = range(6), range(6, 11)
+    # TF-IDF: k% then fixed-length, on the same population
+    ax.plot(xk, [P[t]["tfidf"] for t in KPCT], "o-", color=TEXT, lw=2, label="TF-IDF (text)")
+    ax.plot(xa, [P[t]["tfidf"] for t in ABS], "o-", color=TEXT, lw=2)
+    ax.plot(xk, [P[t]["probe"] for t in KPCT], "s-", color=PROBE, lw=2, label="probe")
+    ax.plot(xa, [P[t]["probe"] for t in ABS], "s-", color=PROBE, lw=2)
+    ax.plot(xk, [P[t]["length_only"] for t in KPCT], "d--", color=LEN, lw=1.5, label="length-only")
+    ax.plot(xa, [P[t]["length_only"] for t in ABS], "d--", color=LEN, lw=1.5)
+    ax.axvline(5.5, color="black", lw=1, ls=":", alpha=0.6)
+    ax.axhline(0.5, color="black", lw=0.8, ls=":", alpha=0.4)
+    ax.text(2.5, 0.46, "k% cuts (leak present)", ha="center", fontsize=9)
+    ax.text(8, 0.46, "fixed-length (leak removed)", ha="center", fontsize=9)
+    labels = ["k1", "k10", "k25", "k50", "k75", "k90",
+              "N64", "N128", "N256", "N512", "N1024"]
+    ax.set_xticks(range(11))
+    ax.set_xticklabels(labels, rotation=45, ha="right", fontsize=8)
+    ax.set_ylabel("cross-fit ROC-AUC")
+    ax.set_ylim(0.44, 0.86)
+    ax.set_title("Same 781 traces, both protocols: removing the leak drops\n"
+                 "length-only to chance but barely moves text — the leak is real "
+                 "but small,\nand does not explain text beating the probe")
+    ax.legend(loc="upper right", fontsize=9)
+    fig.tight_layout()
+    fig.savefig(os.path.join(FIGDIR, "fig4_population_control.png"), dpi=200, bbox_inches="tight")
     plt.close(fig)
 
 
 def main():
     d = load()
-    fig1_delta(d)
-    fig2_readers(d)
+    H, P = d["headline"], d["pop_control"]
+    fig1_delta(H)
+    fig2_readers(H)
     fig3_commitment()
-    fig4_protocol(d)
+    fig4_population_control(P)
     audit = {
-        "source": "outputs/expansion/final_table.json",
-        "commitment_source": "original dataset (RESULTS.md), gold-free agreement",
+        "source": "outputs/expansion/cross_fit.json",
+        "commitment_source": "full 1,000-trace set, gold-free forced-vs-final agreement",
         "commitment": COMMITMENT,
-        "kpct": {k: {kk: d[k][kk] for kk in ("probe", "tfidf", "length_only",
-                 "forced_conf", "delta", "delta_ci", "delta_excludes_0")} for k in KPCT},
-        "abs": {k: {kk: d[k][kk] for kk in ("probe", "tfidf", "length_only",
-                "delta", "delta_ci", "delta_excludes_0")} for k in ABS},
+        "headline_delta": {t: {"d": H[t]["delta_probe_minus_tfidf"],
+                               "ci": H[t]["delta_ci"],
+                               "excl0": H[t]["delta_excludes_0"]} for t in KPCT + ABS},
     }
     with open(os.path.join(FIGDIR, "figure_data.json"), "w") as f:
         json.dump(audit, f, indent=1)
