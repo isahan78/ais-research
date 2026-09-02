@@ -27,9 +27,7 @@ once a reader sees the same prefix text. Both cannot be generally true, and
 the answer matters for a live safety question: whether CoT monitoring needs
 white-box access or whether reading the trace is enough. It also fits a
 16-hour budget honestly: one model, one dataset, a pre-registerable headline
-number, and — decisively — every result has a cheap way to be killed. I
-chose the question I could falsify in a weekend over questions I could only
-decorate.
+number, and every part of it could be tested cheaply and could fail.
 
 ## Q4. What conclusions have you reached?
 
@@ -112,10 +110,10 @@ the repo.
 
 1. **Statistical power.** n_test = 102 with 25 negatives (16 in the fixed-
    length runs). Most CIs are ±0.10–0.15; five of six k% cuts are
-   individually unresolved. *Could I have addressed it? Yes* — ~4× the
-   negatives cost roughly $10 more of GPU; within budget, I chose breadth
-   (a second protocol + controls) over depth. Knowing the outcome, more
-   negatives was probably the better trade.
+   individually unresolved. Could I have addressed it? Yes. About 4x the negatives would have
+   cost roughly $10 more of GPU. I chose breadth (a second protocol and
+   more controls) over more data, and in hindsight more data was the
+   better choice.
 2. **The fixed-length comparison changes two things at once** — cut geometry
    AND population (only traces ≥1024 thinking tokens survive, i.e. harder
    items). The TF-IDF collapse (0.78→0.6) cannot be fully attributed to
