@@ -135,7 +135,10 @@ def _from_env() -> Config:
     abs_raw = os.environ.get("EXPERIMENT_ABS_N")
     pop_raw = os.environ.get("EXPERIMENT_ABS_POP_MIN")
     out_raw = os.environ.get("EXPERIMENT_OUTPUT_DIR")
-    if k_raw is None and out_raw is None and abs_raw is None and pop_raw is None:
+    n_raw = os.environ.get("EXPERIMENT_N_PROBLEMS")
+    layers_raw = os.environ.get("EXPERIMENT_LAYERS")
+    if (k_raw is None and out_raw is None and abs_raw is None and pop_raw is None
+            and n_raw is None and layers_raw is None):
         return Config()
 
     overrides = {}
@@ -177,6 +180,19 @@ def _from_env() -> Config:
                 f"mid-thinking; 0 or 100 would leave nothing to cut or nothing to predict."
             )
         overrides["truncation_k_percent"] = k
+    if n_raw is not None:
+        n = int(n_raw)
+        if not 1 <= n <= 12032:
+            raise SystemExit(f"HALT: EXPERIMENT_N_PROBLEMS={n} outside 1..12032 (MMLU-Pro test size).")
+        overrides["n_problems"] = n
+    if layers_raw is not None:
+        ls = tuple(int(x) for x in layers_raw.replace(" ", "").split(","))
+        for L in ls:
+            if not 0 <= L <= 34:
+                # layer 35 maps to hidden_states[-1] (post-final-RMSNorm): the
+                # raw residual there is unrecoverable, so it is not offered.
+                raise SystemExit(f"HALT: layer {L} outside 0..34 (35 is the post-norm trap).")
+        overrides["layers"] = ls
     if out_raw is not None:
         d = Path(out_raw).resolve()
         overrides.update(
