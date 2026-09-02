@@ -7,10 +7,20 @@
 
 # Do probes on reasoning-model activations predict outcomes better than reading the trace?
 
-**Summary.** Recent papers report that a linear probe on a reasoning model's
-activations can predict, early in the chain of thought, whether the final
-answer will be correct. I tested whether that holds up against strong
-text-only baselines that read the same truncated trace. I found three
+**Summary.** Several recent papers report that a linear probe on a reasoning
+model's activations can predict its final outcome early in the chain of
+thought: [Can We Predict Alignment Before Models Finish Thinking?](https://arxiv.org/abs/2507.12428)
+(probes predict response alignment from early CoT activations, reportedly
+beating text classifiers by ~13 F1), [Temporal Predictors of Outcome in
+Reasoning Language Models](https://arxiv.org/abs/2511.14773) ("eventual
+correctness is highly predictable after only a few tokens"), and
+[No Answer Needed](https://arxiv.org/abs/2509.10625) (question-only probes
+predict coming accuracy). Pointing the other way,
+[Current activation oracles are hard to use](https://www.lesswrong.com/posts/LXQBcztrWKhtcgQfJ/current-activation-oracles-are-hard-to-use)
+found that ~95% of apparent internal signal disappeared once a reader saw
+the same prefix text. Both positions cannot be generally true. I tested
+whether the probe's advantage holds up against strong text-only baselines
+that read the same truncated trace. I found three
 things. First, the standard evaluation protocol has a confound: cutting
 traces at a fixed percentage makes prefix length a near-perfect proxy for
 the trace's eventual length (r = 0.9999999 by construction), and length
@@ -79,7 +89,10 @@ which removes the length confound by construction.
    population change together.
 4. **Commitment happens early.** The forced answer equals the final answer
    59% → 68% → 86% → 93% → 97% across cuts. Much of what an early predictor
-   "predicts" already exists in the model's plan.
+   "predicts" already exists in the model's plan. This is a behavioral,
+   gold-free measurement of the commitment point that
+   [Beyond the Commitment Boundary](https://arxiv.org/abs/2606.13603)
+   studies with black-box methods.
 5. **The withdrawn baseline, for the record.** Scoring the forced answer
    against gold gave 0.96. Scoring the same idea without gold (confidence)
    gives 0.52–0.64. The difference between those numbers is the effect of
