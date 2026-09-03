@@ -1,136 +1,124 @@
-# Executive summary — DRAFT v3 (voice: clear, direct, humble)
+# Executive summary — DRAFT v4 (voice: clear, direct, humble)
 
-> First 1–3 pages of the Google Doc. Numbers from RESULTS.md Run 011
-> (final, 1,000 traces). Figures from outputs/expansion/figures/.
+> First 1–3 pages of the Google Doc. Numbers from RESULTS.md Run 012
+> (cross-fit, budget-matched) / cross_fit.json. Figures from
+> outputs/expansion/figures/.
 
 ---
 
-# Do probes on reasoning-model activations predict outcomes better than reading the trace?
+# How much reported "early prediction from activations" survives a fair, realizable test?
 
 **Summary.** Several recent papers report that a linear probe on a reasoning
-model's activations can predict its final outcome early in the chain of
-thought: [Can We Predict Alignment Before Models Finish Thinking?](https://arxiv.org/abs/2507.12428)
-(probes on early-CoT activations predict whether the final response will be
-safe or unsafe, beating the best text-based baselines — including capable
-LLMs and fine-tuned classifiers — by an average of 13 F1),
-[Temporal Predictors of Outcome in Reasoning Language Models](https://arxiv.org/abs/2511.14773)
+model's activations predicts its final outcome early in the chain of thought,
+and beats text-based baselines while doing it:
+[Can We Predict Alignment Before Models Finish Thinking?](https://arxiv.org/abs/2507.12428)
+(probes on early-CoT activations beat capable LLM and fine-tuned text
+classifiers at predicting a safe/unsafe final response, by an average of 13
+F1), [Temporal Predictors of Outcome in Reasoning Language Models](https://arxiv.org/abs/2511.14773)
 ("eventual correctness is highly predictable after only a few tokens"), and
-[No Answer Needed](https://arxiv.org/abs/2509.10625) (question-only probes
-predict coming accuracy). Pointing the other way,
-[Current activation oracles are hard to use](https://www.lesswrong.com/posts/LXQBcztrWKhtcgQfJ/current-activation-oracles-are-hard-to-use)
-found that ~95% of apparent internal signal disappeared once a reader saw
-the same prefix text. Both positions cannot be generally true. I tested
-whether the probe's advantage holds up against strong text-only baselines
-that read the same truncated trace, on 1,000 traces with all predictions
-sealed in git before the data existed.
+[No Answer Needed](https://arxiv.org/abs/2509.10625). A LessWrong analysis,
+[Current activation oracles are hard to use](https://www.lesswrong.com/posts/LXQBcztrWKhtcgQfJ/current-activation-oracles-are-hard-to-use),
+reports the opposite: most apparent internal signal disappears once a reader
+sees the same prefix text. These are measurements of the same quantity under
+different conditions, so I measured it directly, and carefully: **how much of
+the probe's reported advantage over reading the trace survives a text baseline
+tuned as hard as the probe, a protocol a real monitor could actually run, and
+enough data to resolve the difference?**
 
-I found three things. First, a properly tuned linear probe on activations
-does not beat a tuned bag-of-words reader of the trace text at any cut. On
-the standard protocol the text reader wins at all six cuts, and the gap is
-statistically resolved at five of them. Second, the standard protocol has a
-confound that flatters any reader: cutting traces at a fixed percentage
-makes prefix length a near-perfect proxy for the trace's eventual length
-(r = 0.9999999 by construction), and length alone predicts correctness at
-about 0.63 AUC. When I remove the confound by cutting at fixed token counts,
-the text reader's lead shrinks to a near-tie — but the probe still never
-wins. Third, separate from any predictor: the model commits to its answer
-well before it stops reasoning.
-
-I should also say up front that my strongest early result was wrong. A
-"forced-answer" baseline reached 0.96 AUC and appeared to beat everything.
-An adversarial review of my own pipeline showed its score was computed
-against the answer key, which no deployed monitor could see. I withdrew it.
-The results above are the ones that survived that review. All three of my
-pre-registered predictions (committed to git before each dataset existed)
-were also wrong, and the repo records them.
+On this task (Qwen3-8B, MMLU-Pro, correctness), the answer is: none of the
+*advantage*. A linear probe on activations is a real predictor of final
+correctness, but a single bag-of-words reader of the same trace text beats it
+at every cut I tested — 22 of 22 comparisons, every 95% interval excluding
+zero, under a search budget matched to the probe. The contribution is the
+measurement and two structural lessons that come with it.
 
 ## What I did
 
-I ran Qwen3-8B (thinking mode, 16k thinking budget) on 1,000 MMLU-Pro
-questions, giving 961 usable traces at 78% accuracy (213 incorrect). I chose
-MMLU-Pro after measuring base rates on two other datasets and finding the
-model too accurate for a correctness target (89% on MATH-500 level 5 leaves
-too few failures to study). Each trace is cut at k ∈ {1, 10, 25, 50, 75, 90}%
-of thinking tokens. At each cut, predictors that see exactly the same prefix
-predict final correctness. I report held-out ROC-AUC with splits by problem
-id, identical across all predictors (n_test = 337, 77 negatives):
+Qwen3-8B in thinking mode on 1,000 MMLU-Pro questions (961 usable, 213
+incorrect; I chose MMLU-Pro after measuring that the model was too accurate on
+MATH-500 to leave enough failures to study). Each trace is cut at k ∈ {1, 10,
+25, 50, 75, 90}% of its thinking tokens; at each cut, predictors that see the
+*same* prefix predict final correctness. I report cross-fitted ROC-AUC (out-of-
+fold over all 961 traces, so all 213 negatives are test data once), split by
+problem id:
 
-- a **linear probe** on residual-stream activations. Both the layer (all 35)
-  and the regularization are chosen by cross-validation inside the training
-  split only. My first version selected the layer on the test set and swept
-  nothing; fixing that, and harvesting all layers instead of three, *raised*
-  the probe from about 0.68 to about 0.77 — and it still loses to text.
-- a **tuned TF-IDF classifier** (grid over vectorizer and classifier,
-  grouped CV, train only).
-- a **prefix-length-only** logistic model (one feature), to price the leak.
-- a **frontier-LLM judge** (Claude Opus 5), reported separately: on the
-  original dataset it scored 0.959 at k=25 but 0.876 at k=1, where there is
-  almost no reasoning to read. On a public benchmark it mostly knows the
-  answers, so I did not pool it with readers of the trace.
-- **forced-answer confidence** (gold-free): close the thinking block, force
-  an answer, use the model's own answer-token probability as the score.
+- a **linear probe** on the residual stream at the last prefix token. To make
+  the comparison fair I fix it to one layer chosen a priori and let only its
+  regularization be tuned — the same one-config budget the text reader gets.
+  (Given the generous 280-config best-of-35-layers search, the probe rises but
+  still loses; that number is reported too.)
+- a **TF-IDF classifier**, one fixed configuration, named as *the* text
+  baseline a priori — not a per-cut maximum over several readers.
+- **prefix-length-only**, one feature, to price the length confound.
+- a **frontier-LLM judge** (Claude Opus 5), reported separately: on a public
+  benchmark it largely knows the answers.
+- **forced-answer confidence** (gold-free): close the thinking block, force an
+  answer, use the model's own answer-token probability.
 
-Controls: a k=1 near-zero cut, a shuffled-label floor (500 seeds, corrected
-for best-of-many-layers selection), paired bootstrap CIs, and a second grid
-at fixed token counts (N ∈ {64…1024}) on a fixed population of 781 long
-traces, which removes the length confound by construction (length-only there
-scores 0.48, at chance).
+I also re-ran the whole k% grid on the 781 long traces used for the fixed-
+length grid, so the two protocols differ only in cut geometry, not population.
 
 ## Findings
 
-1. **The probe never beats the best text reader.** On the k% grid, Δ(probe −
-   best text) runs −0.05 to −0.09 and five of six cuts individually exclude
-   zero. More data made this negative result more confident, not less. The
-   probe is a real predictor (0.70–0.78); a tuned word-counter on the same
-   text is simply better (0.77–0.86).
-2. **The k% protocol leaks trace length.** Length alone scores about 0.63,
-   flat in k. Early-prediction results built on this protocol inherit the
-   leak, and a real-time monitor cannot compute it — it needs the trace's
-   eventual length. This is the cleanest structural finding.
-3. **Removing the leak makes it a near-tie, but the probe still does not
-   win.** Under fixed-length cuts the text reader falls to 0.74–0.77 (an
-   earlier, smaller run had suggested a larger collapse to 0.56–0.65; that
-   was mostly noise). The probe sits at 0.67–0.74. Δ stays negative at all
-   five cuts but is only resolved at N=64. So once the leak is gone, probe
-   and text are comparable — with text still nominally ahead.
-4. **Commitment happens early.** On the original dataset, an answer forced
-   mid-trace equals the eventual answer 59% → 68% → 86% → 93% → 97% across
-   cuts, measured without gold labels. Much of what an early predictor
-   "predicts" already exists in the model's plan. This is a behavioral,
-   gold-free measurement of the point that
-   [Beyond the Commitment Boundary](https://arxiv.org/abs/2606.13603)
-   studies with other methods.
-5. **The withdrawn baseline, for the record.** Scoring the forced answer
-   against gold gave 0.96. Scoring the same idea without gold (confidence)
-   gives 0.48–0.85, rising only as the model commits. The difference between
-   those numbers is the effect of reading the answer key, and nothing in the
-   standard evaluation loop flagged it. I found it only because I ran an
-   adversarial review against my own results.
+1. **A budget-matched probe never beats the text reader.** Across 6 k% cuts
+   and 5 fixed-length cuts, Δ(probe − TF-IDF) is −0.04 to −0.09 and every CI
+   excludes zero. The probe is genuinely predictive (0.67–0.76); the text
+   reader is simply better (0.74–0.82). This is not an artifact of tuning: the
+   probe here gets one config, the text reader one config. Worth stating plainly
+   — the activations at a cut are computed *from* the prefix tokens, so the
+   probe cannot carry more information about the label than an ideal reader of
+   the text; a non-positive Δ is the expected default, and the live question is
+   only whether internals make the label more *linearly accessible*. Here they
+   do not.
+2. **The standard k% protocol leaks trace length, and no monitor can use it.**
+   Cutting at a fixed percentage makes prefix length very nearly a
+   deterministic function of the trace's eventual length (measured correlation
+   0.99999), which a real-time monitor cannot know. Length alone then predicts
+   correctness at ~0.61. The fix is to cut at fixed token counts; the argument
+   for it is realizability, not effect size — the same defect that made me
+   withdraw my best early result (below).
+3. **But the leak is small, and it does not explain text beating the probe.**
+   On one fixed population, removing the leak drops a length-only reader from
+   0.56 to 0.52 (chance) but moves TF-IDF by only −0.02 and the probe barely at
+   all. The much larger "text collapse" I reported in an earlier, underpowered
+   pass was a population artifact (long traces are harder), not the leak. I had
+   that wrong and corrected it.
+4. **The model commits to its answer long before its correctness is legible.**
+   An answer forced mid-trace matches the eventual answer 57% → 68% → 86% → 95%
+   → 97% across cuts (gold-free, full set). Yet at the same cuts no reader
+   predicts *correctness* above ~0.8. You can tell *what* the model will answer
+   well before you can tell *whether it is right*. This finding does not depend
+   on any tuning choice.
+
+My strongest early result was wrong, and it belongs here in one line: a
+"forced-answer" baseline scored 0.96 by comparing the forced answer to the
+answer key — which no deployed monitor can see. I withdrew it. The realizability
+rule that killed it is the same one that says fixed-percentage cuts are unusable
+(finding 2). Full account in the write-up.
 
 ## What this means
 
-For chain-of-thought monitoring: on this task, cheap text baselines match or
-beat a linear probe on activations at predicting final correctness, and part
-of the probe's reported edge in the literature can come from an evaluation
-protocol that leaks length rather than from the internals. If you benchmark
-monitors on truncated traces, cut at fixed token counts, not fixed fractions,
-and ask of every baseline whether a deployed monitor could actually compute
-it. Mine could not, and it looked like the best result I had. None of this
-refutes the flagship paper's specific claim — it predicts misalignment, not
-incorrectness — but it does say the comparison has to be run carefully, and
-that reading the trace text is a stronger baseline than reported.
+For chain-of-thought monitoring: on this task, a cheap text reader is a
+stronger and more honest baseline than the early-prediction literature's
+comparisons suggest, and some of the reported edge for internals can come from
+an evaluation protocol that leaks information a monitor could not use. If you
+benchmark monitors on truncated traces, cut at fixed token counts, hold the
+population fixed across protocols, tune both sides equally, and ask of every
+baseline whether a deployed monitor could compute it. None of this refutes the
+flagship paper's specific claim — it predicts misalignment, not incorrectness,
+on a different model — but it says the comparison has to be run carefully, and
+that the interesting safety question may be legibility of *correctness*, which
+stays hard even after the model has decided.
 
 ## Limitations
 
-n_test = 337 with 77 negatives on the k% grid (274 / 69 on the fixed-length
-grid), so several individual intervals are still wide. One model and one
-dataset; I test the correctness version of the claim, not the alignment
-version in the paper that motivated this. The judge comparison is limited by
-benchmark memorization and was run only on the original dataset. Labels come
-from single generations. The fixed-length grid changes the population (long
-traces only) as well as the cut geometry, so its near-tie cannot be
-attributed to leak removal alone. Whole-project compute was about $11.
+One model, one dataset, correctness rather than alignment. Cross-fitting uses
+all 213 negatives, but that is still a few hundred failures; the probe is fixed
+to one a-priori layer (the generous multi-layer search is reported alongside).
+The judge is limited by benchmark memorization and was run on the original
+subset. Labels are single generations. Whole-project compute was about $11, all
+of it before this analysis, which added no GPU cost.
 
 **Repo:** [public GitHub link] — raw traces, every run with provenance, the
-three sealed pre-registrations, and the review scripts that found the error
-in my own headline result.
+three sealed pre-registrations (all three wrong, and that is the point), and the
+review scripts that found the error in my own headline result.

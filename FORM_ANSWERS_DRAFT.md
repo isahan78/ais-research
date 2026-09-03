@@ -1,7 +1,7 @@
-# Form answers — DRAFT v3 (Run 011 final numbers; voice: clear, direct, humble)
+# Form answers — DRAFT v4 (Run 012 cross-fit; voice: clear, direct, humble)
 
 > Status: draft for the owner to rewrite in their own voice. Every number
-> traces to RESULTS.md Run 011 / final_table.json. Qs 9–12 are OWNER-ONLY and
+> traces to RESULTS.md Run 012 / cross_fit.json. Qs 9–12 are OWNER-ONLY and
 > contain structure, not content. Neel explicitly rejects raw LLM output —
 > these drafts are the skeleton and the facts; the voice must be yours.
 
@@ -10,54 +10,61 @@
 ## Q2. What question did you try to answer?
 
 Recent work reports that a linear probe on a reasoning model's activations
-can predict, early in its chain of thought, whether its final answer will be
-correct. I asked: does that advantage survive comparison against the
-strongest *cheap* predictors that read only the trace text — the same
-information horizon, no internals? Concretely: Δ(k) = AUC(probe) −
-AUC(best text-only reader), measured at six cut points of Qwen3-8B thinking
-traces on MMLU-Pro, with predictions pre-registered in git before any data
-existed.
+predicts, early in its chain of thought, whether its final answer will be
+correct — and beats a reader of the trace text while doing it. I asked how
+much of that *advantage over reading the text* survives a fair, realizable
+test: a text baseline tuned as hard as the probe, a truncation protocol a real
+monitor could actually run, and enough data to resolve the difference.
+Concretely: Δ(k) = AUC(probe) − AUC(text reader) at cut points of Qwen3-8B
+thinking traces on MMLU-Pro, with predictions pre-registered in git before any
+data existed.
 
 ## Q3. Why is this question interesting / why did you choose it?
 
-Two published positions disagree. One line of work reports activation probes
-beating capable text-based classifiers at predicting the outcome of a
-reasoning trace; another finds ~95% of apparent internal signal disappears
-once a reader sees the same prefix text. Both cannot be generally true, and
-the answer matters for a live safety question: whether CoT monitoring needs
-white-box access or whether reading the trace is enough. It also fits a
-16-hour budget honestly: one model, one dataset, a pre-registerable headline
-number, and every part of it could be tested cheaply and could fail.
+Published measurements point opposite ways: one line reports activation probes
+beating text-based classifiers at predicting a trace's outcome; another finds
+most apparent internal signal disappears once a reader sees the same prefix
+text. Which you get depends on how hard the text side is tuned and what the
+protocol leaks — so the useful contribution is a careful measurement, not a
+new method. It matters for a live safety question: whether CoT monitoring needs
+white-box access or whether reading the trace is enough. And it fits a 16-hour
+budget honestly: one model, one dataset, a pre-registerable headline number,
+every part cheap to test and able to fail.
 
 ## Q4. What conclusions have you reached?
 
-From 1,000 traces (961 usable, 213 negatives; k% test set n=337, 77
-negatives):
+From 1,000 traces (961 usable, 213 negatives), cross-fitted over all of them:
 
-1. **A properly tuned linear probe on activations does not beat a tuned
-   bag-of-words reader of the same trace text at any cut.** On the k% grid the
-   probe runs 0.70–0.78 and the text reader 0.77–0.86; Δ = AUC(probe) −
-   AUC(best text) is −0.05 to −0.09, flat in k, and five of six cuts
-   individually exclude zero. Quadrupling the pilot made this negative result
-   *more* confident, not less. Fixing my probe protocol and harvesting all 35
-   layers *raised* the probe from ~0.68 to ~0.77 — it was understated before,
-   and it still loses.
-2. **The standard k%-of-trace truncation protocol is confounded.** Cutting at
-   a fixed fraction makes prefix length a near-perfect proxy for the trace's
-   *eventual* length (corr = 0.9999999 by construction) — information no
-   real-time monitor has. Prefix length alone predicts correctness at ~0.63
-   AUC. Early-prediction results built on this protocol inherit the leak.
-3. **Removing the leak (fixed-length cuts) makes it a near-tie, but the probe
-   still never wins.** The text reader falls to 0.74–0.77 and the probe to
-   0.67–0.74; Δ stays negative at all five cuts but is resolved only at N=64.
-   (A smaller pilot had suggested a larger text collapse to 0.56–0.65; that
-   was mostly small-sample noise. Population caveat in Q7.)
-4. **The model commits to its answer long before it stops reasoning**: forcing
-   an answer mid-trace matches the eventual answer 59% at 10% of thinking, 97%
-   at 90% — measured with no gold labels.
+1. **A budget-matched linear probe never beats a single bag-of-words reader of
+   the trace text — 22 of 22 comparisons, every 95% interval excluding zero.**
+   Across 6 k% cuts and 5 fixed-length cuts, Δ = AUC(probe) − AUC(TF-IDF) is
+   −0.04 to −0.09; the probe scores 0.67–0.76, the text reader 0.74–0.82. To
+   keep it fair, the probe gets one config (a single a-priori layer) — the same
+   budget as the one fixed TF-IDF. Given a generous 280-config search the probe
+   rises to ~0.77 but still loses everywhere. Worth noting *why* a null is the
+   default: activations at the cut are a deterministic function of the prefix
+   tokens, so the probe cannot carry more label-information than an ideal text
+   reader; the live question is only whether internals are more *linearly
+   accessible*, and here they are not.
+2. **The standard k%-of-trace protocol leaks trace length.** Cutting at a fixed
+   fraction makes prefix length very nearly a deterministic function of the
+   trace's *eventual* length (measured correlation 0.99999) — information no
+   real-time monitor has. Length alone then predicts correctness at ~0.61. The
+   fix is fixed-token cuts; the argument for it is realizability, not effect
+   size (see Q6).
+3. **But the leak is small and does not explain text beating the probe.** On
+   one fixed population, removing the leak drops a length-only reader from 0.56
+   to 0.52 (chance) but moves TF-IDF by only −0.02. An earlier underpowered
+   pass of mine reported a large "text collapse" under fixed-length cuts; that
+   was a population + small-n artifact, which I corrected (Q7).
+4. **The model commits to its answer long before its correctness is legible.**
+   A forced mid-trace answer matches the eventual answer 57% → 86% → 97% across
+   cuts (gold-free, full set), yet no reader predicts *correctness* above ~0.8
+   at those cuts. You can tell what the model will say well before you can tell
+   whether it is right. This is the most robust result — no probe, no tuning.
 5. My most exciting result was wrong. A "forced-answer" baseline reached 0.96
-   AUC, but its score was computed against the answer key (see Q6). The
-   numbers above are the ones that survived the review that caught it.
+   AUC, but its score was computed against the answer key (see Q6). The numbers
+   above are the ones that survived the review that caught it.
 
 ## Q5. Technical setup
 
@@ -70,20 +77,23 @@ negatives):
   disproportionately *incorrect* ones: survivor bias).
 - **Data:** 1,000 MMLU-Pro questions (chosen after *measuring* base rates:
   Qwen3-8B is 89% accurate on MATH-500 level 5, leaving too few negatives;
-  MMLU-Pro gave 22% error = 213 negatives). 961 usable traces; splits by
-  problem-id, identical across all readers and cuts (k% test set n=337, 77
-  negatives).
+  MMLU-Pro gave 22% error = 213 negatives). 961 usable traces.
 - **Cuts:** k ∈ {1, 10, 25, 50, 75, 90}% of thinking tokens, plus a second
   grid at fixed N ∈ {64…1024} tokens on a fixed 781-trace population (traces
-  ≥1,024 thinking tokens; n_test=274, 69 negatives).
-- **Readers:** logistic probe on residual stream (all 35 layers; layer and C
-  selected by CV *inside the training split*), tuned TF-IDF classifier
-  (grid, grouped CV in-train), prefix-length-only logistic, frontier-LLM judge
-  (reported separately — see Q6), and a gold-free forced-answer-confidence
-  monitor.
+  ≥1,024 thinking tokens, 196 negatives).
+- **Fair budget:** the text reader is one fixed TF-IDF config; the probe is
+  matched to one config (a single a-priori layer, residual stream at the last
+  prefix token, C by inner CV). The generous 35-layer search is reported as a
+  labelled upper bound. Δ = probe − TF-IDF, no per-cut max on the text side.
+- **Cross-fit:** out-of-fold predictions over all 961/781 traces (5-fold
+  StratifiedGroupKFold, split by problem id), so every negative is test data
+  once; pooled and per-fold AUC agree. Δ CI = cluster bootstrap over problems.
+- **Population control:** the k% grid re-run on the same 781 traces used for
+  fixed-length, isolating cut geometry from population.
+- **Other readers:** prefix-length-only (prices the leak); frontier-LLM judge
+  (reported separately — Q6); gold-free forced-answer-confidence monitor.
 - **Controls:** k=1 near-zero cut; shuffled-label floor (500 seeds,
-  max-across-layers statistic); paired bootstrap CIs; pre-registered
-  predictions (three, sealed in git with timestamps).
+  max-across-layers); three pre-registered predictions sealed in git.
 
 ## Q6. Strongest evidence AGAINST these hypotheses
 
@@ -98,43 +108,45 @@ failing review. Three cases:
    at k=90). On the remaining rows its AUC was 0.000. The apparent
    "gap widens with k" finding was just the copy rate approaching 1. I
    withdrew it. No deployed monitor could compute this score.
-2. **Against the leak explanation:** the tuned TF-IDF's signal is nearly
-   orthogonal to length (partial r ≈ 0.43 controlling for log length), so
-   "the text reader is just a length detector" — my own first interpretation
-   — was wrong. I corrected it in the record.
-3. **Against the probe:** it never leads. At the k=1 control it scores 0.70,
-   close to the text reader there, so most of what it "reads" this early is
-   question difficulty, not reasoning. The frontier judge scored 0.959 at k=25
-   but 0.876 at k=1, where there is almost no reasoning to read — it mostly
-   knows this public benchmark, so I reported it separately rather than pool
-   the most flattering number.
+2. **Against my own leak story:** I first reported that removing the leak made
+   the text reader "collapse" — evidence the leak was doing text's work. A
+   cross-fit on a fixed population showed I was wrong: the leak is small (+0.04
+   AUC to a length-only reader, and does not move TF-IDF), and the apparent
+   collapse was a population artifact. Corrected in the record.
+3. **Against the probe:** it never leads, even given a 280-config search it
+   never got matched on the text side. At the k=1 control it scores 0.69, so
+   little of what it reads this early is reasoning. The frontier judge scored
+   0.959 at k=25 but 0.876 at k=1, where there is almost no reasoning to read —
+   it mostly knows this public benchmark, so I reported it separately rather
+   than pool the most flattering number.
 
 All three of my pre-registered predictions were also wrong. I predicted
-Δ ≈ +0.10 at k=50; it came in around −0.08. My third pre-registration (before
-the full-power run) predicted the probe would stay near 0.68 and that
-fixed-length cuts would put it ahead; instead it rose to ~0.77 and still lost.
-My track record on sealed forecasts is 0 for 3 — and that each was committed
-before its dataset existed is what makes the record worth anything. All of it
-is timestamped in the repo.
+Δ ≈ +0.10 at k=50; it came in negative. My third pre-registration (before the
+full-power run) predicted the probe would stay near 0.68 and that fixed-length
+cuts would put it ahead; instead it rose (to ~0.77 with a full search) and
+still lost at every cut. My record on sealed forecasts is 0 for 3 — and that
+each was committed before its dataset existed is what makes the record worth
+anything. All of it is timestamped in the repo.
 
 ## Q7. Biggest limitations — and could I have addressed them?
 
-1. **Statistical power.** n_test = 337 with 77 negatives (274 / 69 in the
-   fixed-length runs) — after I quadrupled the pilot in response to a review
-   that flagged it as underpowered. The k% Δ is now resolved at five of six
-   cuts; the fixed-length Δ is resolved only at N=64. Another doubling would
-   settle the rest for roughly $10 more of GPU.
-2. **The fixed-length comparison changes two things at once** — cut geometry
-   AND population (only traces ≥1024 thinking tokens survive, i.e. harder
-   items). The near-tie there cannot be attributed to removing the leak alone.
-   Addressable with a length-matched resample; I ran out of budget.
-3. **One model, one dataset; correctness, not alignment.** The flagship
-   paper I'm auditing predicts *misalignment* of the response; I tested the
-   correctness variant. My results speak to the protocol and the genre, not
-   to that paper's specific claim.
-4. **The judge comparison is bounded by memorization** — on a public
-   benchmark, a frontier model's "prediction" is partly recall. Controlled
-   for (k=1) but not removable without private items.
+1. **The probe's degrees of freedom.** The fair probe is one a-priori layer;
+   the generous one searches 35. Both lose, but a richer probe (multiple layers
+   concatenated, attention over the prefix) might close some of the gap — though
+   by the accessibility argument it can only ever match, not exceed, what the
+   text supports. I have not tested a richer probe.
+2. **Power, now largely handled.** After a first reviewer flagged the pilot as
+   underpowered I quadrupled the data (52 → 213 negatives) and cross-fit over
+   all of it, which resolves every one of the 22 Δ comparisons. That is still a
+   few hundred failures on one benchmark; the intervals are tight, not
+   zero-width.
+3. **One model, one dataset; correctness, not alignment.** The flagship paper
+   predicts *misalignment* of the response, on a different model; I tested the
+   correctness variant. My results speak to the protocol and the genre, not to
+   that paper's specific claim.
+4. **The judge comparison is bounded by memorization** — on a public benchmark
+   a frontier model's "prediction" is partly recall. Controlled for (k=1) but
+   not removable without private items.
 
 ## Q8. How I used LLMs — and how I made sure it wasn't slop
 
@@ -159,13 +171,13 @@ facts, from the project record:]
   (d) hand-verification: randomly sampled traces, prefixes and forced
   answers read by eye at every stage; grader spot-checked against 40 traces.
 - **What I checked vs didn't:** every reported number traces to a committed
-  artifact and was recomputed at least twice by independent code paths (the
-  final probe table cross-checks final_table.json against a separate
-  honest-refit run). I did NOT hand-verify all 1,000 traces (10-sample spot
-  checks per stage), and single-generation labels mean a trace's correctness
-  is one sample of a stochastic model. **Where a major error would least
-  surprise me:** residual subtleties of the fixed-length population shift
-  (Q7.2), and the fixed-length Δ, which is resolved at only one of five cuts.
+  artifact; the final table cross-checks two independent code paths (pooled vs
+  per-fold AUC agree, and the cross-fit reproduces the single-split direction).
+  I did NOT hand-verify all 1,000 traces (10-sample spot checks per stage), and
+  single-generation labels mean a trace's correctness is one sample of a
+  stochastic model. **Where a major error would least surprise me:** the choice
+  of a single a-priori probe layer (I mitigate by also reporting the 35-layer
+  search), and any systematic bias in TF-IDF features I did not think to probe.
 
 ## Q9. Prior experience with mech interp — OWNER ONLY
 [Structure: pre-project experience (steering-vector experiment you ran);
