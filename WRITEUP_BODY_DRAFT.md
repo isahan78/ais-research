@@ -159,12 +159,16 @@ what it will say well before an observer can tell whether it is right. This is
 the most robust result in the project: it uses no probe, no tuning, and only the
 model's own outputs.
 
-**The judge, reported separately.** Claude Opus 5 scores 0.959 at k=25 and 0.876
-at k=1, where there is almost no reasoning to read — 91% of its performance from
-essentially the question. MMLU-Pro is public; the judge is largely solving the
-item and inferring that a weaker model will fail a hard one. That is a different
-quantity, so I report it as a difficulty oracle and do not pool it into the text
-baseline. Pooling it would have flattered the headline.
+**The judge, reported separately** (original 289-trace subset, k1 and k25 only).
+Claude Opus 5 scores 0.959 at k=25 and 0.876 at k=1, where there is almost no
+reasoning to read — 91% of its performance from essentially the question.
+MMLU-Pro is public; the judge is largely solving the item and inferring that a
+weaker model will fail a hard one. That is a different quantity, so I report it
+as a difficulty oracle and do not pool it into the text baseline. Pooling it
+would have flattered the headline. I deliberately did not expand it to the full
+1,000-trace set or the other cuts: it costs paid API calls, it is excluded from
+Δ by design, and k1-vs-k25 already makes its one point — so the spend would buy
+no evidence the argument needs.
 
 **Forced-confidence**, the gold-free "just ask the model" monitor, scores
 0.58–0.82 on the k% grid: near chance early, rising as the model commits, always

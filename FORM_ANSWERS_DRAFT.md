@@ -91,7 +91,8 @@ From 1,000 traces (961 usable, 213 negatives), cross-fitted over all of them:
 - **Population control:** the k% grid re-run on the same 781 traces used for
   fixed-length, isolating cut geometry from population.
 - **Other readers:** prefix-length-only (prices the leak); frontier-LLM judge
-  (reported separately — Q6); gold-free forced-answer-confidence monitor.
+  (Claude Opus 5, original 289-trace subset only; reported separately — Q6);
+  gold-free forced-answer-confidence monitor.
 - **Controls:** k=1 near-zero cut; shuffled-label floor (500 seeds,
   max-across-layers); three pre-registered predictions sealed in git.
 
@@ -115,10 +116,12 @@ failing review. Three cases:
    collapse was a population artifact. Corrected in the record.
 3. **Against the probe:** it never leads, even given a 280-config search it
    never got matched on the text side. At the k=1 control it scores 0.69, so
-   little of what it reads this early is reasoning. The frontier judge scored
-   0.959 at k=25 but 0.876 at k=1, where there is almost no reasoning to read —
-   it mostly knows this public benchmark, so I reported it separately rather
-   than pool the most flattering number.
+   little of what it reads this early is reasoning. The frontier judge (Claude
+   Opus 5, original 289-trace subset, k1/k25) scored 0.959 at k=25 but 0.876 at
+   k=1, where there is almost no reasoning to read — it mostly knows this public
+   benchmark, so I reported it separately as a difficulty oracle rather than
+   pool the most flattering number, and did not spend to expand it since it
+   never enters Δ.
 
 All three of my pre-registered predictions were also wrong. I predicted
 Δ ≈ +0.10 at k=50; it came in negative. My third pre-registration (before the

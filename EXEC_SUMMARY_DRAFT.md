@@ -50,8 +50,11 @@ problem id:
 - a **TF-IDF classifier**, one fixed configuration, named as *the* text
   baseline a priori — not a per-cut maximum over several readers.
 - **prefix-length-only**, one feature, to price the length confound.
-- a **frontier-LLM judge** (Claude Opus 5), reported separately: on a public
-  benchmark it largely knows the answers.
+- a **frontier-LLM judge** (Claude Opus 5), reported separately and measured
+  only on the original 289-trace subset (k1 and k25): on a public benchmark it
+  largely knows the answers, so it is a difficulty oracle, not a trace reader,
+  and is kept out of the head-to-head — which is why I did not spend to expand
+  it to the full set.
 - **forced-answer confidence** (gold-free): close the thinking block, force an
   answer, use the model's own answer-token probability.
 
@@ -115,8 +118,9 @@ stays hard even after the model has decided.
 One model, one dataset, correctness rather than alignment. Cross-fitting uses
 all 213 negatives, but that is still a few hundred failures; the probe is fixed
 to one a-priori layer (the generous multi-layer search is reported alongside).
-The judge is limited by benchmark memorization and was run on the original
-subset. Labels are single generations. Whole-project compute was about $11, all
+The judge is limited by benchmark memorization and was run only on the original
+289-trace subset (k1, k25); I kept it there deliberately, since it is a
+quarantined difficulty oracle that never enters Δ. Labels are single generations. Whole-project compute was about $11, all
 of it before this analysis, which added no GPU cost.
 
 **Repo:** [public GitHub link] — raw traces, every run with provenance, the
