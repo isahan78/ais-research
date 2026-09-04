@@ -89,22 +89,39 @@ def fig2_readers(H):
     plt.close(fig)
 
 
-def fig3_commitment():
-    fig, ax = plt.subplots(figsize=(7, 4.3))
-    xs = sorted(COMMITMENT)
-    ax.plot(xs, [COMMITMENT[k] for k in xs], "o-", color="#9467bd", lw=2)
-    ax.axhline(1.0, color="black", lw=1, ls=":", alpha=0.5)
-    for k in xs:
-        ax.annotate(f"{COMMITMENT[k]:.0%}", (k, COMMITMENT[k]),
-                    textcoords="offset points", xytext=(0, 8), ha="center", fontsize=9)
+def fig3_decoupling(H):
+    """THE figure: the answer commits (agreement -> ~1) long before its
+    correctness becomes legible (best AUC stalls ~0.8). Two different quantities,
+    both on [0.5, 1], plotted together to show the gap."""
+    fig, ax = plt.subplots(figsize=(7.6, 4.7))
+    xs = KX
+    commit = [COMMITMENT[k] for k in xs]
+    best = [H[t]["tfidf"] for t in KPCT]       # best correctness reader at each cut
+    probe = [H[t]["probe"] for t in KPCT]
+    # shade the legibility gap between commitment and the best correctness reader
+    ax.fill_between(xs, best, commit, where=[c >= b for c, b in zip(commit, best)],
+                    color="#9467bd", alpha=0.10, interpolate=True)
+    ax.plot(xs, commit, "o-", color="#9467bd", lw=2.4,
+            label="answer commitment  (forced = final answer)")
+    ax.plot(xs, best, "s-", color=TEXT, lw=2.2,
+            label="correctness legibility  (best reader, ROC-AUC)")
+    ax.plot(xs, probe, "^--", color=PROBE, lw=1.4, alpha=0.8,
+            label="— probe, for reference (ROC-AUC)")
+    ax.axhline(0.5, color="black", lw=1, ls=":", alpha=0.5)
+    ax.annotate("answer ~97% locked", (90, commit[-1]), textcoords="offset points",
+                xytext=(-6, 8), ha="right", fontsize=8.5, color="#6a4a9c")
+    ax.annotate("…but correctness only ~0.82 readable", (90, best[-1]),
+                textcoords="offset points", xytext=(-6, -14), ha="right",
+                fontsize=8.5, color="#a01f1f")
     ax.set_xlabel("cut point k (% of thinking tokens)")
-    ax.set_ylabel("agreement: forced answer = final answer")
-    ax.set_title("The model commits early: answer ~86% locked by halfway\n"
-                 "(gold-free, full 1,000-trace set)")
+    ax.set_ylabel("agreement  or  ROC-AUC   (both in [0.5, 1])")
+    ax.set_title("Commitment precedes legibility: the model settles on its answer\n"
+                 "long before an observer can tell whether it is right")
     ax.set_xticks(xs)
     ax.set_ylim(0.5, 1.02)
+    ax.legend(loc="lower right", fontsize=8.5)
     fig.tight_layout()
-    fig.savefig(os.path.join(FIGDIR, "fig3_commitment.png"), dpi=200)
+    fig.savefig(os.path.join(FIGDIR, "fig3_decoupling.png"), dpi=200)
     plt.close(fig)
 
 
@@ -143,7 +160,7 @@ def main():
     H, P = d["headline"], d["pop_control"]
     fig1_delta(H)
     fig2_readers(H)
-    fig3_commitment()
+    fig3_decoupling(H)
     fig4_population_control(P)
     audit = {
         "source": "outputs/expansion/cross_fit.json",

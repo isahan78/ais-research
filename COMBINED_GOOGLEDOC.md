@@ -110,6 +110,13 @@ length grid, so the two protocols differ only in cut geometry, not population.
    well before you can tell *whether it is right*. This finding does not depend
    on any tuning choice.
 
+   > **[INSERT FIGURE 3 HERE — `outputs/expansion/figures/fig3_decoupling.png`]**
+   > *Figure 3. Commitment precedes legibility. The forced-answer agreement curve
+   > (purple) climbs from chance to ~97% — the model settles what it will say —
+   > while the best correctness reader (red, ROC-AUC) plateaus near 0.8. Two
+   > different quantities, both on [0.5, 1]: by mid-trace the answer is largely
+   > fixed, yet whether it is right stays only moderately readable.*
+
 My strongest early result was wrong, and it belongs here in one line: a
 "forced-answer" baseline scored 0.96 by comparing the forced answer to the
 answer key — which no deployed monitor can see. I withdrew it. The realizability
