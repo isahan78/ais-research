@@ -209,4 +209,4 @@ predictions were committed to git *before* the corresponding data existed
 the timestamps and all three refutations are in history; my forecasts went
 0 for 3; (2) the adversarial review scripts that falsified my own headline are
 preserved verbatim in the repo (`redteam/`), alongside every run's raw
-artifacts. The repo is public as of submission.
+artifacts. Repo: https://github.com/isahan78/ais-research (public).

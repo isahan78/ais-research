@@ -155,6 +155,6 @@ The judge is limited by benchmark memorization and was run only on the original
 quarantined difficulty oracle that never enters Δ. Labels are single generations. Whole-project compute was about $11, all
 of it before this analysis, which added no GPU cost.
 
-**Repo:** [public GitHub link] — raw traces, every run with provenance, the
+**Repo:** [github.com/isahan78/ais-research](https://github.com/isahan78/ais-research) — raw traces, every run with provenance, the
 three sealed pre-registrations (all three wrong, and that is the point), and the
 review scripts that found the error in my own headline result.
