@@ -36,7 +36,8 @@ every part cheap to test and able to fail.
 From 1,000 traces (961 usable, 213 negatives), cross-fitted over all of them:
 
 1. **A budget-matched linear probe never beats a single bag-of-words reader of
-   the trace text — 22 of 22 comparisons, every 95% interval excluding zero.**
+   the trace text — all 11 cuts, every 95% interval excluding zero (17 distinct
+   comparisons counting the population-control re-run).**
    Across 6 k% cuts and 5 fixed-length cuts, Δ = AUC(probe) − AUC(TF-IDF) is
    −0.04 to −0.09; the probe scores 0.67–0.76, the text reader 0.74–0.82. To
    keep it fair, the probe gets one config (a single a-priori layer) — the same

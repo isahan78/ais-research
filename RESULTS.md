@@ -398,8 +398,10 @@ that were unresolved in Run 011.
 - All 11 population-control Δ also exclude zero.
 
 ### The three answers, now settled
-1. **Does the probe ever beat the best text reader?** No — 22/22 comparisons,
-   every CI excludes zero, under a budget matched to the text side.
+1. **Does the probe ever beat the best text reader?** No — 11/11 cuts, every CI
+   excludes zero, under a budget matched to the text side (17 distinct
+   comparisons with the population-control re-run; the 5 fixed-length cuts are
+   shared between the two blocks, so the 22 rows collapse to 17 distinct).
 2. **Does removing the length leak change the verdict?** No. The leak is real
    but small (+0.038 to a length reader) and does not preferentially flatter
    text; the case for fixed-length cuts is REALIZABILITY (a monitor cannot

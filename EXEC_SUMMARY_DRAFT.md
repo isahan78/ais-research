@@ -34,9 +34,10 @@ enough data to resolve the difference?**
 On this task (Qwen3-8B, MMLU-Pro, correctness), the answer is: none of the
 *advantage*. A linear probe on activations is a real predictor of final
 correctness, but a single bag-of-words reader of the same trace text beats it
-at every cut I tested — 22 of 22 comparisons, every 95% interval excluding
-zero, under a search budget matched to the probe. The contribution is the
-measurement and two structural lessons that come with it.
+at every cut I tested — all 11 cuts, every 95% interval excluding zero, and
+again when the k% grid is re-run on the fixed-length population (17 distinct
+comparisons in all) — under a search budget matched to the probe. The
+contribution is the measurement and two structural lessons that come with it.
 
 ## What I did
 

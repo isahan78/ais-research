@@ -30,9 +30,10 @@ enough data to resolve the difference?**
 On this task (Qwen3-8B, MMLU-Pro, correctness), the answer is: none of the
 *advantage*. A linear probe on activations is a real predictor of final
 correctness, but a single bag-of-words reader of the same trace text beats it
-at every cut I tested — 22 of 22 comparisons, every 95% interval excluding
-zero, under a search budget matched to the probe. The contribution is the
-measurement and two structural lessons that come with it.
+at every cut I tested — all 11 cuts, every 95% interval excluding zero, and
+again when the k% grid is re-run on the fixed-length population (17 distinct
+comparisons in all) — under a search budget matched to the probe. The
+contribution is the measurement and two structural lessons that come with it.
 
 ## What I did
 
@@ -259,9 +260,11 @@ fixed-length n=781/196 neg; Figures 1–2):
 | N512 | 0.711 | 0.770 | 0.521 | −0.059 | [−0.087, −0.030] |
 | N1024 | 0.701 | 0.781 | 0.521 | −0.081 | [−0.111, −0.053] |
 
-Every Δ is negative and every interval excludes zero: **11 of 11 cuts, and all
-11 again when the k% grid is re-run on the fixed-length population — 22
-comparisons in total.** More data and a fair budget did not rescue the probe;
+Every Δ is negative and every interval excludes zero: **11 of 11 cuts, and
+again when the k% grid is re-run on the fixed-length population — 17 distinct
+comparisons in all** (the five fixed-length cuts are shared between the two
+analyses, so I count them once). More data and a fair budget did not rescue the
+probe;
 they made the loss universal and resolved. The generous 280-config probe (Run
 011) reaches ~0.76–0.78 on the k% grid — higher, because searching 35 layers
 helps — but it still loses to TF-IDF at every cut. Whether the probe gets one
