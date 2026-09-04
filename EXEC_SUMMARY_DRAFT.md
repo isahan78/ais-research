@@ -1,8 +1,14 @@
-# Executive summary — DRAFT v4 (voice: clear, direct, humble)
+# Executive summary — DRAFT v5 (voice: clear, direct, humble)
 
 > First 1–3 pages of the Google Doc. Numbers from RESULTS.md Run 012
-> (cross-fit, budget-matched) / cross_fit.json. Figures from
-> outputs/expansion/figures/.
+> (cross-fit, budget-matched) / cross_fit.json.
+>
+> FIGURES: two go in the exec summary — Figure 1 (`fig1_delta.png`) and Figure 2
+> (`fig4_population_control.png`), marked inline below with captions. In the
+> Google Doc, Insert > Image at each marker, then delete the marker line. Keep
+> images ≤ ~6.5" wide so they fit the page. The full four-figure set
+> (fig1–fig4) lives in the write-up body. All PNGs are in
+> outputs/expansion/figures/ and regenerate from make_figures_v2.py.
 
 ---
 
@@ -73,6 +79,13 @@ length grid, so the two protocols differ only in cut geometry, not population.
    the text; a non-positive Δ is the expected default, and the live question is
    only whether internals make the label more *linearly accessible*. Here they
    do not.
+
+   > **[INSERT FIGURE 1 HERE — `outputs/expansion/figures/fig1_delta.png`]**
+   > *Figure 1. Budget-matched probe minus TF-IDF at every cut. All 11 points
+   > are below zero and every 95% CI excludes it (cross-fit, 213/196 negatives):
+   > a linear probe on activations never beats a single bag-of-words reader of
+   > the same text.*
+
 2. **The standard k% protocol leaks trace length, and no monitor can use it.**
    Cutting at a fixed percentage makes prefix length very nearly a
    deterministic function of the trace's eventual length (measured correlation
@@ -86,6 +99,13 @@ length grid, so the two protocols differ only in cut geometry, not population.
    all. The much larger "text collapse" I reported in an earlier, underpowered
    pass was a population artifact (long traces are harder), not the leak. I had
    that wrong and corrected it.
+
+   > **[INSERT FIGURE 2 HERE — `outputs/expansion/figures/fig4_population_control.png`]**
+   > *Figure 2. The same 781 traces under both protocols. Removing the length
+   > leak sends a length-only reader to chance (grey) but barely moves the text
+   > reader (red) or the probe (blue): the leak is real but small, and does not
+   > explain text beating the probe.*
+
 4. **The model commits to its answer long before its correctness is legible.**
    An answer forced mid-trace matches the eventual answer 57% → 68% → 86% → 95%
    → 97% across cuts (gold-free, full set). Yet at the same cuts no reader
