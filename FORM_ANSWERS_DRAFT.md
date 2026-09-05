@@ -79,6 +79,13 @@ From 1,000 traces (961 usable, 213 negatives), cross-fitted over all of them:
 - **Data:** 1,000 MMLU-Pro questions (chosen after *measuring* base rates:
   Qwen3-8B is 89% accurate on MATH-500 level 5, leaving too few negatives;
   MMLU-Pro gave 22% error = 213 negatives). 961 usable traces.
+- **Prompts:** each MMLU-Pro item is rendered as a 10-option MCQ (labels A–J)
+  ending in a fixed instruction — *"Reason step by step, then give your final
+  answer as a single letter in \boxed{}"* — run through Qwen3's chat template
+  with thinking mode ON. The gold-free confidence monitor uses a forced-answer
+  prompt: `prefix + </think> + "Based only on the reasoning above, my single
+  best answer is \boxed{"`, and scores the model's probability on the next
+  (answer) token — no gold ever read.
 - **Cuts:** k ∈ {1, 10, 25, 50, 75, 90}% of thinking tokens, plus a second
   grid at fixed N ∈ {64…1024} tokens on a fixed 781-trace population (traces
   ≥1,024 thinking tokens, 196 negatives).
@@ -141,9 +148,9 @@ anything. All of it is timestamped in the repo.
    text supports. I have not tested a richer probe.
 2. **Power, now largely handled.** After a first reviewer flagged the pilot as
    underpowered I quadrupled the data (52 → 213 negatives) and cross-fit over
-   all of it, which resolves every one of the 22 Δ comparisons. That is still a
-   few hundred failures on one benchmark; the intervals are tight, not
-   zero-width.
+   all of it, which resolves every one of the 17 distinct Δ comparisons (all CIs
+   exclude zero). That is still a few hundred failures on one benchmark; the
+   intervals are tight, not zero-width.
 3. **One model, one dataset; correctness, not alignment.** The flagship paper
    predicts *misalignment* of the response, on a different model; I tested the
    correctness variant. My results speak to the protocol and the genre, not to
@@ -162,9 +169,9 @@ facts, from the project record:]
   literature sweeps; Claude Opus 5 via API as the judge baseline (an
   experimental subject, not an assistant).
 - **Verification, in order of rigor:**
-  (a) 439 CPU-only tests, runnable without GPU/network, enforcing the
-  invariants whose silent failure would fabricate results (split-by-problem,
-  truncation boundaries, AUC orientation);
+  (a) 441 passing CPU-only tests (461 collected, 20 skipped; no GPU/network),
+  enforcing the invariants whose silent failure would fabricate results
+  (split-by-problem, truncation boundaries, AUC orientation);
   (b) mutation testing: I deliberately broke the floor computation, the
   layer indexing, and the verdict logic, and checked that the test suite
   fails. An earlier version of the suite passed all three mutations, which
