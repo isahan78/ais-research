@@ -152,8 +152,8 @@ in the repo.
    the text supports. I have not tested a richer probe.
 2. **Power, now largely handled.** After a first reviewer flagged the pilot as
    underpowered I quadrupled the data (52 → 213 negatives) and cross fit over all
-   of it, which resolves every one of the 17 distinct Δ comparisons (all CIs
-   exclude zero). That is still a few hundred failures on one benchmark; the
+   of it. That resolves every one of the 17 distinct Δ comparisons, and all CIs
+   exclude zero. It is still a few hundred failures on one benchmark, so the
    intervals are tight, not zero width.
 3. **One model, one dataset; correctness, not alignment.** The flagship paper
    predicts *misalignment* of the response, on a different model; I tested the
@@ -218,11 +218,10 @@ taught me to be skeptical of what the instruments say.
 1. I taught myself mechanistic interpretability by building in it, on my own.
    GlassBox reimplements the standard toolkit (patching, causal tracing, circuit
    discovery, SAE features) on TransformerLens as a tested library with a REST
-   API and a dashboard; AgentSentinel is a safety prototype that flags risky
+   API and a dashboard. AgentSentinel is a safety prototype that flags risky
    model outputs, traces them to specific attention heads, and enforces
-   configurable policies through a live dashboard. Neither is a novel finding,
-   but together they show I ramp into a field fast and build the tooling to work
-   in it.
+   configurable policies. Neither is a novel finding, but together they show I
+   ramp into a field fast and build the tooling to work in it.
 2. [FILL: a time you doubted a result or your own assumption, checked it, and
    changed your mind. Skepticism that cost you something is the strongest signal
    here. Non ML is fine.]
