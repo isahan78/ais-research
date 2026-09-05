@@ -215,17 +215,17 @@ taught me to be skeptical of what the instruments say.
 
 ## Q10. 1 to 3 pieces of evidence you'd do good research (~100 words)
 
-1. I taught myself mechanistic interpretability by building GlassBox (above): I
-   went from no formal exposure to a working platform that reimplements patching,
-   causal tracing, circuit discovery, and SAE feature extraction on
-   TransformerLens, with a tested library, a REST API, and a dashboard. It is
-   evidence I can learn a field on my own and build the tooling to work in it.
+1. I taught myself mechanistic interpretability by building in it, on my own.
+   GlassBox reimplements the standard toolkit (patching, causal tracing, circuit
+   discovery, SAE features) on TransformerLens as a tested library with a REST
+   API and a dashboard; AgentSentinel is a safety prototype that flags risky
+   model outputs, traces them to specific attention heads, and enforces
+   configurable policies through a live dashboard. Neither is a novel finding,
+   but together they show I ramp into a field fast and build the tooling to work
+   in it.
 2. [FILL: a time you doubted a result or your own assumption, checked it, and
    changed your mind. Skepticism that cost you something is the strongest signal
    here. Non ML is fine.]
-3. [FILL: optional third, something you shipped or debugged under a real
-   constraint, or a fast learning example outside ML. Keep each to one or two
-   sentences; concrete beats impressive.]
 
 ## Q11. Why Neel's stream
 
