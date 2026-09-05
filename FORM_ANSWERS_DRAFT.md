@@ -196,33 +196,36 @@ from the project record:]
 
 ## Q9. Prior experience with mech interp
 
-Limited, and I would rather say that plainly than dress it up. Before this
-project my only hands on interpretability was one small steerability experiment:
-[FILL: which model, e.g. a small open model], where I [FILL: what you did, e.g.
-built a steering vector from contrast pairs and added it at a middle layer to
-push generations toward <behaviour>]. It was small and taught me [FILL: one
-honest lesson, e.g. that the effect was real but brittle to the layer and the
-scaling].
+More than none, though mostly on the engineering side, and I would rather be
+exact about that than round it up. Before this project I built GlassBox, an
+interpretability platform on top of Neel's TransformerLens. It implements the
+standard toolkit end to end: activation tracing, activation patching, causal
+tracing, circuit discovery, and sparse autoencoder feature extraction, wrapped in
+a tested library with a REST API and a dashboard. It reimplements published
+methods (patching from the ROME work, Anthropic's circuits framework, the
+monosemanticity SAEs) rather than producing a new finding, and it runs at GPT-2
+and Llama 2 scale. So I arrived fluent with hooks, activations, patching, and
+SAEs as tools.
 
-Most of what I now know I learned building this project: harvesting residual
-stream activations from a thinking model, training and cross validating linear
-probes, the gap between an honest and a leaky evaluation protocol, and the recent
-literature on early prediction from activations (the alignment before thinking
-probes, temporal predictors of outcome, and the activation oracle critique). I am
-early in this field and comfortable saying so.
+What this MATS project added was the science rather than the plumbing: picking a
+real question, registering predictions before the data existed, racing a probe
+against honestly tuned baselines, and withdrawing my own headline when it turned
+out to read the answer key. GlassBox taught me how to instrument a model. This
+taught me to be skeptical of what the instruments say.
 
 ## Q10. 1 to 3 pieces of evidence you'd do good research (~100 words)
 
-[FILL: this must be your own, and must NOT be this project. Pick one to three
-short, concrete items. For each, one or two sentences; concrete beats
-impressive. Prompts to jog it:]
-1. [FILL: something you built or shipped that actually worked, ideally under a
-   constraint. Name the hard part and how you got past it.]
+1. I taught myself mechanistic interpretability by building GlassBox (above): I
+   went from no formal exposure to a working platform that reimplements patching,
+   causal tracing, circuit discovery, and SAE feature extraction on
+   TransformerLens, with a tested library, a REST API, and a dashboard. It is
+   evidence I can learn a field on my own and build the tooling to work in it.
 2. [FILL: a time you doubted a result or your own assumption, checked it, and
    changed your mind. Skepticism that cost you something is the strongest signal
-   here.]
-3. [FILL: evidence you learn fast on your own, e.g. picked up <tool/skill> in
-   <short time> to do <concrete thing>.]
+   here. Non ML is fine.]
+3. [FILL: optional third, something you shipped or debugged under a real
+   constraint, or a fast learning example outside ML. Keep each to one or two
+   sentences; concrete beats impressive.]
 
 ## Q11. Why Neel's stream
 
@@ -238,18 +241,17 @@ most exciting result was false, and I only caught it by attacking my own
 pipeline. Getting better at that, in a stream that selects for it, is what I
 want.
 
-Third, [FILL: one specific thing of his that shaped you, e.g. a particular write
-up, talk, or the "pragmatic interpretability" framing, and the one thing you took
-from it]. I am not interested in interpretability as decoration; I want to do
-useful things with it and be told plainly when they are not useful.
+Third, I have already spent real time inside his TransformerLens, building
+GlassBox on top of it, so his tooling and framing are literally how I learned to
+instrument a model. [FILL: optional, add one more specific of his that shaped you,
+a particular write up or talk, and the one thing you took from it.] I am not
+interested in interpretability as decoration; I want to do useful things with it
+and be told plainly when they are not useful.
 
 ## Q12. Likelihood you'd join Sept 28 to Oct 30
 
-[FILL after checking your calendar. If clear, keep the line below; if there is a
-conflict, state it plainly and say how you would handle it. Do not overpromise.]
-
-Very likely. I have no conflicts I am aware of across Sept 28 to Oct 30 and would
-treat the program as my primary commitment for that window.
+Very likely. I have no conflicts across Sept 28 to Oct 30 and would treat the
+program as my primary commitment for that window.
 
 ## Q13. (Optional) Anything else
 
