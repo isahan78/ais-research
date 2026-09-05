@@ -230,23 +230,29 @@ taught me to be skeptical of what the instruments say.
 ## Q11. Why Neel's stream
 
 Because the way he says research should be done is the way this project actually
-went, and I want more of it. Three specifics.
+went, and because the direction he is pushing is the one I want to work in. Four
+specifics.
 
-First, his advice to start with the obvious thing, a prompt or a linear probe
-before an SAE. That is exactly what made this tractable in the time I had; the
-linear probe was the right first tool and it was enough to reach a real answer.
+First, the move toward practical interpretability. I am a builder at heart. I
+would rather build and experiment my way to a finding that is actually useful
+than polish theory, and that is the exact turn his stream is taking. GlassBox and
+this project are both that instinct: instrument a model, run the experiment, keep
+what survives.
 
-Second, his line that most results are false, especially the exciting ones. My
+Second, his advice to start with the obvious thing, a prompt or a linear probe
+before an SAE. That is exactly what made this project tractable in the time I
+had; the linear probe was the right first tool and it was enough to reach a real
+answer.
+
+Third, his line that most results are false, especially the exciting ones. My
 most exciting result was false, and I only caught it by attacking my own
 pipeline. Getting better at that, in a stream that selects for it, is what I
 want.
 
-Third, I have already spent real time inside his TransformerLens, building
+Fourth, I have already spent real time inside his TransformerLens, building
 GlassBox on top of it, so his tooling and framing are literally how I learned to
-instrument a model. [FILL: optional, add one more specific of his that shaped you,
-a particular write up or talk, and the one thing you took from it.] I am not
-interested in interpretability as decoration; I want to do useful things with it
-and be told plainly when they are not useful.
+instrument a model. I am not interested in interpretability as decoration; I want
+to do useful things with it and be told plainly when they are not useful.
 
 ## Q12. Likelihood you'd join Sept 28 to Oct 30
 
