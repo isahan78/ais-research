@@ -42,14 +42,14 @@ From 1,000 traces (961 usable, 213 negatives), cross fitted over all of them:
    the trace text. All 11 cuts, every 95% interval excludes zero (17 distinct
    comparisons counting the population control rerun).**
    Across 6 k% cuts and 5 fixed length cuts, Δ = AUC(probe) − AUC(TF-IDF) is
-   −0.04 to −0.09; the probe scores 0.67 to 0.76, the text reader 0.74 to 0.82.
+   −0.04 to −0.09. The probe scores 0.67 to 0.76, the text reader 0.74 to 0.82.
    To keep it fair, the probe gets one config (a single fixed layer chosen in
    advance), the same budget as the one fixed TF-IDF. Given a generous 280
-   config search the probe rises to ~0.77 but still loses everywhere. Worth
-   noting *why* a null is the default: activations at the cut are a deterministic
-   function of the prefix tokens, so the probe cannot carry more label
-   information than an ideal text reader; the live question is only whether
-   internals are more *linearly accessible*, and here they are not.
+   config search the probe rises to ~0.77 but still loses everywhere. A null is
+   the default for a reason. Activations at the cut are a deterministic function
+   of the prefix tokens, so the probe cannot carry more label information than an
+   ideal text reader. The live question is only whether internals are more
+   *linearly accessible*, and here they are not.
 2. **The standard k% of trace protocol leaks trace length.** Cutting at a fixed
    fraction makes prefix length very nearly a deterministic function of the
    trace's *eventual* length (measured correlation 0.99999), information no real
@@ -132,13 +132,13 @@ review. Three cases:
    original 289 trace subset, k1/k25) scored 0.959 at k=25 but 0.876 at k=1,
    where there is almost no reasoning to read. It mostly knows this public
    benchmark, so I reported it separately as a difficulty oracle rather than pool
-   the most flattering number, and did not spend to expand it since it never
+   the most flattering number. I did not spend to expand it, since it never
    enters Δ.
 
 All three of my registered predictions were also wrong. I predicted Δ ≈ +0.10 at
 k=50; it came in negative. My third registration (before the full power run)
 predicted the probe would stay near 0.68 and that fixed length cuts would put it
-ahead; instead it rose (to ~0.77 with a full search) and still lost at every cut.
+ahead. Instead it rose (to ~0.77 with a full search) and still lost at every cut.
 My record on sealed forecasts is 0 for 3, and that each was committed before its
 dataset existed is what makes the record worth anything. All of it is timestamped
 in the repo.
@@ -186,8 +186,8 @@ from the project record:]
   (d) hand verification: randomly sampled traces, prefixes and forced answers
   read by eye at every stage; grader spot checked against 40 traces.
 - **What I checked versus didn't:** every reported number traces to a committed
-  artifact; the final table cross checks two independent code paths (pooled and
-  per fold AUC agree, and the cross fit reproduces the single split direction). I
+  artifact. The final table cross checks two independent code paths: pooled and
+  per fold AUC agree, and the cross fit reproduces the single split direction. I
   did NOT hand verify all 1,000 traces (10 sample spot checks per stage), and
   single generation labels mean a trace's correctness is one sample of a
   stochastic model. **Where a major error would least surprise me:** the choice
