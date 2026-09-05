@@ -215,17 +215,16 @@ taught me to be skeptical of what the instruments say.
 
 ## Q10. 1 to 3 pieces of evidence you'd do good research (~100 words)
 
-1. I taught myself mechanistic interpretability by building in it, on my own.
-   GlassBox reimplements the standard toolkit (patching, causal tracing, circuit
-   discovery, SAE features) on TransformerLens as a tested library with a REST
-   API and a dashboard. It is evidence I ramp into a field fast and build the
-   tooling to work in it.
+1. I taught myself mechanistic interpretability by building in it. GlassBox
+   reimplements the standard toolkit (patching, causal tracing, circuits, SAE
+   features) on TransformerLens as a tested library with a REST API and a
+   dashboard. Evidence I ramp into a field fast and build the tooling to work in
+   it.
 2. I also learned to distrust my own claims. I built AgentSentinel to trace risky
    outputs to "dangerous circuits", then had to admit the circuits were a
    hardcoded list of attention heads and the trigger was keyword matching. It was
    attribution against an assumption, not the mechanistic detection I had
-   labelled it. I would rather name that than ship the bigger claim, and it is
-   why this project was built around baselines a monitor could actually run.
+   labelled it. I would rather catch that myself than ship the bigger claim.
 
 ## Q11. Why Neel's stream
 
