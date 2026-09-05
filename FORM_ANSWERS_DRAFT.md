@@ -194,23 +194,62 @@ from the project record:]
   of a single fixed probe layer (I mitigate by also reporting the 35 layer
   search), and any systematic bias in TF-IDF features I did not think to probe.
 
-## Q9. Prior experience with mech interp (OWNER ONLY)
-[Structure: prior experience (the steering vector experiment you ran); what you
-learned via this project (activation harvesting, probing, the literature). Do not
-inflate; he explicitly welcomes low experience.]
+## Q9. Prior experience with mech interp
 
-## Q10. 1 to 3 pieces of evidence you'd do good research (~100 words) (OWNER ONLY)
-[Must NOT be this project. Nonstandard welcome. Think: things you've built,
-debugged, shipped; evidence of persistence, skepticism, or fast learning.]
+Limited, and I would rather say that plainly than dress it up. Before this
+project my only hands on interpretability was one small steerability experiment:
+[FILL: which model, e.g. a small open model], where I [FILL: what you did, e.g.
+built a steering vector from contrast pairs and added it at a middle layer to
+push generations toward <behaviour>]. It was small and taught me [FILL: one
+honest lesson, e.g. that the effect was real but brittle to the layer and the
+scaling].
 
-## Q11. Why Neel's stream (OWNER ONLY)
-[Honest version only. Useful raw material: his stated selection for skepticism
-and truth seeking matches how you want to work; pragmatic interp focus; his
-write ups taught you X. Avoid flattery; be specific.]
+Most of what I now know I learned building this project: harvesting residual
+stream activations from a thinking model, training and cross validating linear
+probes, the gap between an honest and a leaky evaluation protocol, and the recent
+literature on early prediction from activations (the alignment before thinking
+probes, temporal predictors of outcome, and the activation oracle critique). I am
+early in this field and comfortable saying so.
 
-## Q12. Likelihood you'd join Sept 28 to Oct 30 (OWNER ONLY)
-[Check your actual calendar first. A number or "very likely/certain" plus one
-sentence. Do not overpromise.]
+## Q10. 1 to 3 pieces of evidence you'd do good research (~100 words)
+
+[FILL: this must be your own, and must NOT be this project. Pick one to three
+short, concrete items. For each, one or two sentences; concrete beats
+impressive. Prompts to jog it:]
+1. [FILL: something you built or shipped that actually worked, ideally under a
+   constraint. Name the hard part and how you got past it.]
+2. [FILL: a time you doubted a result or your own assumption, checked it, and
+   changed your mind. Skepticism that cost you something is the strongest signal
+   here.]
+3. [FILL: evidence you learn fast on your own, e.g. picked up <tool/skill> in
+   <short time> to do <concrete thing>.]
+
+## Q11. Why Neel's stream
+
+Because the way he says research should be done is the way this project actually
+went, and I want more of it. Three specifics.
+
+First, his advice to start with the obvious thing, a prompt or a linear probe
+before an SAE. That is exactly what made this tractable in the time I had; the
+linear probe was the right first tool and it was enough to reach a real answer.
+
+Second, his line that most results are false, especially the exciting ones. My
+most exciting result was false, and I only caught it by attacking my own
+pipeline. Getting better at that, in a stream that selects for it, is what I
+want.
+
+Third, [FILL: one specific thing of his that shaped you, e.g. a particular write
+up, talk, or the "pragmatic interpretability" framing, and the one thing you took
+from it]. I am not interested in interpretability as decoration; I want to do
+useful things with it and be told plainly when they are not useful.
+
+## Q12. Likelihood you'd join Sept 28 to Oct 30
+
+[FILL after checking your calendar. If clear, keep the line below; if there is a
+conflict, state it plainly and say how you would handle it. Do not overpromise.]
+
+Very likely. I have no conflicts I am aware of across Sept 28 to Oct 30 and would
+treat the program as my primary commitment for that window.
 
 ## Q13. (Optional) Anything else
 
